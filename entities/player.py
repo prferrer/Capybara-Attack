@@ -123,10 +123,10 @@ class Player:
         self.rect.x += dx
         self.rect.y += dy
 
-        left_limit = ROOM_X + TILE_SIZE
-        right_limit = ROOM_X + ROOM_WIDTH - TILE_SIZE
-        top_limit = ROOM_Y + TILE_SIZE
-        bottom_limit = ROOM_Y + ROOM_HEIGHT - TILE_SIZE
+        left_limit = ROOM_X
+        right_limit = ROOM_X + ROOM_WIDTH
+        top_limit = ROOM_Y
+        bottom_limit = ROOM_Y + ROOM_HEIGHT
 
         self.rect.left = max(self.rect.left, left_limit)
         self.rect.right = min(self.rect.right, right_limit)
