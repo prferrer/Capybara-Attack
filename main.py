@@ -18,6 +18,40 @@ from systems.game_manager import GameManager
 from systems.skill import SkillEffect
 
 
+def get_map_info(day):
+    cycle_day = ((day - 1) % 15) + 1
+
+    if cycle_day <= 5:
+        return "normal", cycle_day
+
+    if cycle_day <= 10:
+        return "cave", cycle_day - 5
+
+    return "snow", cycle_day - 10
+
+
+def create_enemies(map_type):
+    if map_type == "cave":
+        enemy_type = "golem"
+    elif map_type == "snow":
+        enemy_type = "yeti"
+    else:
+        enemy_type = "orc"
+
+    return [
+        Enemy(
+            ROOM_X + 350,
+            ROOM_Y + 200,
+            enemy_type
+        ),
+        Enemy(
+            ROOM_X + 550,
+            ROOM_Y + 350,
+            enemy_type
+        )
+    ]
+
+
 def draw_hud(screen, font, player):
     hud_text = (
         f"HP: {player.hp}/{player.max_hp}   "
@@ -187,25 +221,25 @@ def main():
     font = pygame.font.Font(None, 28)
 
     game_manager = GameManager()
+    game_manager.day = 5
 
-    map_number = 5
-    room = Room(map_number)
+    map_type, map_number = get_map_info(
+        game_manager.day
+    )
+
+    room = Room(
+        map_number,
+        map_type
+    )
 
     player = Player(
         ROOM_X + 48,
         ROOM_Y + 48
     )
 
-    enemies = [
-        Enemy(
-            ROOM_X + 350,
-            ROOM_Y + 200
-        ),
-        Enemy(
-            ROOM_X + 550,
-            ROOM_Y + 350
-        )
-    ]
+    enemies = create_enemies(
+        map_type
+    )
 
     last_player_attack = 0
     player_attack_cooldown = 1000
@@ -230,7 +264,8 @@ def main():
                 if event.key == pygame.K_e:
 
                     if (
-                        map_number == 5
+                        map_type == "normal"
+                        and map_number == 5
                         and player.selected_skill is None
                     ):
                         campsite = pygame.Rect(
@@ -251,27 +286,23 @@ def main():
 
                         game_manager.next_day()
 
-                        map_number = (
-                            (game_manager.day - 1) % 5
-                        ) + 1
+                        map_type, map_number = get_map_info(
+                            game_manager.day
+                        )
 
-                        room = Room(map_number)
+                        room = Room(
+                            map_number,
+                            map_type
+                        )
 
                         player.rect.topleft = (
                             ROOM_X + 48,
                             ROOM_Y + 48
                         )
 
-                        enemies = [
-                            Enemy(
-                                ROOM_X + 350,
-                                ROOM_Y + 200
-                            ),
-                            Enemy(
-                                ROOM_X + 550,
-                                ROOM_Y + 350
-                            )
-                        ]
+                        enemies = create_enemies(
+                            map_type
+                        )
 
             if event.type == pygame.MOUSEBUTTONDOWN:
 
@@ -346,7 +377,7 @@ def main():
             enemy for enemy in enemies
             if enemy.alive
         ]
-        
+
         if skill_effect:
             skill_effect.update()
 
@@ -418,7 +449,11 @@ def main():
                         player.selected_skill,
                         (
                             player.rect.centerx
-                            + (70 if player.facing_right else -70),
+                            + (
+                                70
+                                if player.facing_right
+                                else -70
+                            ),
                             player.rect.centery
                         ),
                         player.facing_right
@@ -426,7 +461,8 @@ def main():
 
                     nearest_enemy.take_damage(
                         player.skill_damage
-)
+                    )
+
                     player.last_skill_use = (
                         current_time
                     )
@@ -442,7 +478,8 @@ def main():
             )
 
         if (
-            map_number == 5
+            map_type == "normal"
+            and map_number == 5
             and not skill_menu_open
             and player.selected_skill is None
         ):

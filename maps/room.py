@@ -1,4 +1,3 @@
-
 import pygame
 
 from settings import (
@@ -10,12 +9,20 @@ from settings import (
 
 
 class Room:
-    def __init__(self, map_number=1):
+    def __init__(self, map_number=1, map_type="normal"):
         self.map_number = map_number
+        self.map_type = map_type
         self.walls = []
 
+        if map_type == "cave":
+            filename = f"assets/images/cave_map{map_number}.png"
+        elif map_type == "snow":
+            filename = f"assets/images/snow_map{map_number}.png"
+        else:
+            filename = f"assets/images/map{map_number}.png"
+
         self.map_image = pygame.image.load(
-            f"assets/images/map{map_number}.png"
+            filename
         ).convert()
 
         self.map_image = pygame.transform.scale(

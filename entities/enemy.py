@@ -1,57 +1,98 @@
 import math
 import pygame
 
+
 class Enemy:
-    def __init__(self, x, y):
-        self.rect = pygame.Rect(x, y,80,80)
+    def __init__(self, x, y, enemy_type="orc"):
+        self.enemy_type = enemy_type
+        self.rect = pygame.Rect(x, y, 80, 80)
 
         self.hp = 40
         self.max_hp = 40
         self.attack = 5
         self.alive = True
+        self.speed = 1.5
+
+        if enemy_type == "golem":
+            prefix = "golem"
+        elif enemy_type == "yeti":
+            prefix = "yeti"
+        else:
+            prefix = "orc"
 
         self.idle_image = pygame.image.load(
-            "assets/images/orc_idle1.png"
+            f"assets/images/{prefix}_idle1.png"
         ).convert_alpha()
 
         self.attack_images = []
+        self.right_attack_images = []
+        self.left_attack_images = []
         self.right_run_images = []
         self.left_run_images = []
 
         for i in range(1, 6):
-            attack_image = pygame.image.load(
-                f"assets/images/orc_attack{i}.png"
+            if enemy_type == "orc":
+                attack_image = pygame.image.load(
+                    f"assets/images/orc_attack{i}.png"
+                ).convert_alpha()
+
+                self.attack_images.append(attack_image)
+
+            else:
+                right_attack = pygame.image.load(
+                    f"assets/images/{prefix}_right_attack{i}.png"
+                ).convert_alpha()
+
+                left_attack = pygame.image.load(
+                    f"assets/images/{prefix}_left_attack{i}.png"
+                ).convert_alpha()
+
+                self.right_attack_images.append(right_attack)
+                self.left_attack_images.append(left_attack)
+
+            right_run = pygame.image.load(
+                f"assets/images/{prefix}_right_running{i}.png"
+                if enemy_type != "orc"
+                else f"assets/images/orc_right_run{i}.png"
             ).convert_alpha()
 
-            right_image = pygame.image.load(
-                f"assets/images/orc_right_run{i}.png"
+            left_run = pygame.image.load(
+                f"assets/images/{prefix}_left_running{i}.png"
+                if enemy_type != "orc"
+                else f"assets/images/orc_left_run{i}.png"
             ).convert_alpha()
 
-            left_image = pygame.image.load(
-                f"assets/images/orc_left_run{i}.png"
-            ).convert_alpha()
-
-            self.attack_images.append(attack_image)
-            self.right_run_images.append(right_image)
-            self.left_run_images.append(left_image)
+            self.right_run_images.append(right_run)
+            self.left_run_images.append(left_run)
 
         self.idle_image = pygame.transform.scale(
             self.idle_image,
-            (80,80)
+            (80, 80)
         )
 
-        self.attack_images = [
-            pygame.transform.scale(image, (80,80))
-            for image in self.attack_images
+        if self.attack_images:
+            self.attack_images = [
+                pygame.transform.scale(image, (80, 80))
+                for image in self.attack_images
+            ]
+
+        self.right_attack_images = [
+            pygame.transform.scale(image, (80, 80))
+            for image in self.right_attack_images
+        ]
+
+        self.left_attack_images = [
+            pygame.transform.scale(image, (80, 80))
+            for image in self.left_attack_images
         ]
 
         self.right_run_images = [
-            pygame.transform.scale(image, (80,80))
+            pygame.transform.scale(image, (80, 80))
             for image in self.right_run_images
         ]
 
         self.left_run_images = [
-            pygame.transform.scale(image, (80,80))
+            pygame.transform.scale(image, (80, 80))
             for image in self.left_run_images
         ]
 
@@ -65,8 +106,6 @@ class Enemy:
 
         self.last_attack_time = 0
         self.attack_cooldown = 1000
-
-        self.speed = 1.5
 
     def update(self, player):
         if not self.alive:
@@ -99,6 +138,11 @@ class Enemy:
             self.is_moving = False
             self.is_attacking = True
 
+            if dx > 0:
+                self.facing_right = True
+            elif dx < 0:
+                self.facing_right = False
+
             if (
                 current_time - self.last_attack_time
                 >= self.attack_cooldown
@@ -122,7 +166,7 @@ class Enemy:
                 self.animation_timer = 0
                 self.current_frame = (
                     self.current_frame + 1
-                ) % len(self.attack_images)
+                ) % 5
 
         elif self.is_moving:
             self.animation_timer += 1
@@ -131,7 +175,7 @@ class Enemy:
                 self.animation_timer = 0
                 self.current_frame = (
                     self.current_frame + 1
-                ) % len(self.right_run_images)
+                ) % 5
 
         else:
             self.current_frame = 0
@@ -149,24 +193,25 @@ class Enemy:
             return
 
         if self.is_attacking:
-            image = self.attack_images[self.current_frame]
+            if self.enemy_type == "orc":
+                image = self.attack_images[self.current_frame]
+            elif self.facing_right:
+                image = self.right_attack_images[self.current_frame]
+            else:
+                image = self.left_attack_images[self.current_frame]
 
         elif self.is_moving:
             if self.facing_right:
-                image = self.right_run_images[
-                    self.current_frame
-                ]
+                image = self.right_run_images[self.current_frame]
             else:
-                image = self.left_run_images[
-                    self.current_frame
-                ]
+                image = self.left_run_images[self.current_frame]
 
         else:
             image = self.idle_image
 
         screen.blit(image, self.rect)
 
-        health_width =80
+        health_width = 80
         health_ratio = self.hp / self.max_hp
 
         pygame.draw.rect(
