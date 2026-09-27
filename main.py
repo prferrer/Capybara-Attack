@@ -29,8 +29,7 @@ def get_map_info(day):
 
     return "snow", cycle_day - 10
 
-
-def create_enemies(map_type):
+def create_enemies(map_type, day):
     if map_type == "cave":
         enemy_type = "golem"
     elif map_type == "snow":
@@ -38,17 +37,35 @@ def create_enemies(map_type):
     else:
         enemy_type = "orc"
 
+    if day <= 5:
+        enemy_count = 2
+    elif day <= 10:
+        enemy_count = 3
+    elif day <= 15:
+        enemy_count = 4
+    elif day <= 20:
+        enemy_count = 5
+    elif day <= 30:
+        enemy_count = 6
+    elif day <= 40:
+        enemy_count = 7
+    else:
+        enemy_count = 8
+
+    positions = [
+        (ROOM_X + 350, ROOM_Y + 200),
+        (ROOM_X + 550, ROOM_Y + 350),
+        (ROOM_X + 200, ROOM_Y + 400),
+        (ROOM_X + 650, ROOM_Y + 150),
+        (ROOM_X + 400, ROOM_Y + 450),
+        (ROOM_X + 150, ROOM_Y + 150),
+        (ROOM_X + 700, ROOM_Y + 400),
+        (ROOM_X + 500, ROOM_Y + 100)
+    ]
+
     return [
-        Enemy(
-            ROOM_X + 350,
-            ROOM_Y + 200,
-            enemy_type
-        ),
-        Enemy(
-            ROOM_X + 550,
-            ROOM_Y + 350,
-            enemy_type
-        )
+        Enemy(x, y, enemy_type, day)
+        for x, y in positions[:enemy_count]
     ]
 
 
@@ -238,7 +255,8 @@ def main():
     )
 
     enemies = create_enemies(
-        map_type
+    map_type,
+    game_manager.day
     )
 
     last_player_attack = 0
@@ -301,7 +319,8 @@ def main():
                         )
 
                         enemies = create_enemies(
-                            map_type
+                            map_type,
+                            game_manager.day
                         )
 
             if event.type == pygame.MOUSEBUTTONDOWN:

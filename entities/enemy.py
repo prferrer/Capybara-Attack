@@ -1,17 +1,31 @@
 import math
 import pygame
 
-
 class Enemy:
-    def __init__(self, x, y, enemy_type="orc"):
-        self.enemy_type = enemy_type
+    def __init__(self, x, y, enemy_type="orc", day=1):
         self.rect = pygame.Rect(x, y, 80, 80)
+        self.x = float(x)
+        self.y = float(y)
+        self.enemy_type = enemy_type
 
-        self.hp = 40
-        self.max_hp = 40
-        self.attack = 5
+        if enemy_type == "golem":
+            self.hp = 70 + (day - 1) * 8
+            self.attack = 4 + int((day - 1) * 0.5)
+            self.speed = 1.0
+
+        elif enemy_type == "yeti":
+            self.hp = 35 + (day - 1) * 5
+            self.attack = 8 + int((day - 1) * 0.7)
+            self.speed = 2.2
+
+        else:
+            self.hp = 40 + (day - 1) * 6
+            self.attack = 5 + int((day - 1) * 0.6)
+            self.speed = 1.5
+
+        self.max_hp = self.hp
         self.alive = True
-        self.speed = 1.5
+        self.aggro_range = 150
 
         if enemy_type == "golem":
             prefix = "golem"
@@ -118,7 +132,7 @@ class Enemy:
 
         current_time = pygame.time.get_ticks()
 
-        if distance > 90 and distance < 350:
+        if distance > 90 and distance <= self.aggro_range:
             self.is_attacking = False
             self.is_moving = True
 
@@ -126,8 +140,11 @@ class Enemy:
                 dx /= distance
                 dy /= distance
 
-            self.rect.x += int(dx * self.speed)
-            self.rect.y += int(dy * self.speed)
+            self.x += dx * self.speed
+            self.y += dy * self.speed
+
+            self.rect.x = round(self.x)
+            self.rect.y = round(self.y)
 
             if dx > 0:
                 self.facing_right = True
