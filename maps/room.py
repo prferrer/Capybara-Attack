@@ -15,11 +15,11 @@ class Room:
         self.walls = []
 
         if map_type == "cave":
-            filename = f"assets/images/cave_map{map_number}.png"
+            filename = f"assets/images/map/cave_map{map_number}.png"
         elif map_type == "snow":
-            filename = f"assets/images/snow_map{map_number}.png"
+            filename = f"assets/images/map/snow_map{map_number}.png"
         else:
-            filename = f"assets/images/map{map_number}.png"
+            filename = f"assets/images/map/map{map_number}.png"
 
         self.map_image = pygame.image.load(
             filename

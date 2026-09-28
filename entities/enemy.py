@@ -35,7 +35,7 @@ class Enemy:
             prefix = "orc"
 
         self.idle_image = pygame.image.load(
-            f"assets/images/{prefix}_idle1.png"
+            f"assets/images/enemy/{prefix}_idle1.png"
         ).convert_alpha()
 
         self.attack_images = []
@@ -47,33 +47,33 @@ class Enemy:
         for i in range(1, 6):
             if enemy_type == "orc":
                 attack_image = pygame.image.load(
-                    f"assets/images/orc_attack{i}.png"
+                    f"assets/images/enemy/orc_attack{i}.png"
                 ).convert_alpha()
 
                 self.attack_images.append(attack_image)
 
             else:
                 right_attack = pygame.image.load(
-                    f"assets/images/{prefix}_right_attack{i}.png"
+                    f"assets/images/enemy/{prefix}_right_attack{i}.png"
                 ).convert_alpha()
 
                 left_attack = pygame.image.load(
-                    f"assets/images/{prefix}_left_attack{i}.png"
+                    f"assets/images/enemy/{prefix}_left_attack{i}.png"
                 ).convert_alpha()
 
                 self.right_attack_images.append(right_attack)
                 self.left_attack_images.append(left_attack)
 
             right_run = pygame.image.load(
-                f"assets/images/{prefix}_right_running{i}.png"
+                f"assets/images/enemy/{prefix}_right_running{i}.png"
                 if enemy_type != "orc"
-                else f"assets/images/orc_right_run{i}.png"
+                else f"assets/images/enemy/orc_right_run{i}.png"
             ).convert_alpha()
 
             left_run = pygame.image.load(
-                f"assets/images/{prefix}_left_running{i}.png"
+                f"assets/images/enemy/{prefix}_left_running{i}.png"
                 if enemy_type != "orc"
-                else f"assets/images/orc_left_run{i}.png"
+                else f"assets/images/enemy/orc_left_run{i}.png"
             ).convert_alpha()
 
             self.right_run_images.append(right_run)
@@ -170,7 +170,6 @@ class Enemy:
                 )
 
                 player.hp -= damage
-                player.hit_sound.play()  # Play capyhit sound effect
                 self.last_attack_time = current_time
 
         else:

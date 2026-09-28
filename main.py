@@ -1,3 +1,4 @@
+import random
 import pygame
 
 from settings import (
@@ -17,6 +18,7 @@ from maps.room import Room
 from systems.game_manager import GameManager
 from systems.skill import SkillEffect
 from systems.start_screen import run_start_screen
+from systems.encounter import Encounter
 
 
 def get_map_info(day):
@@ -68,6 +70,35 @@ def create_enemies(map_type, day):
         Enemy(x, y, enemy_type, day)
         for x, y in positions[:enemy_count]
     ]
+    
+def create_encounter():
+    encounter_type = random.choices(
+        [
+            "gold_chest",
+            "mystery_chest",
+            "healing_fountain",
+            "cursed_fountain",
+            "capy_statue",
+            "training_buddy"
+        ],
+        weights=[
+            30,
+            25,
+            12,
+            10,
+            12,
+            11
+        ]
+    )[0]
+
+    x = ROOM_X + random.randint(100, 650)
+    y = ROOM_Y + random.randint(100, 350)
+
+    return Encounter(
+        encounter_type,
+        x,
+        y
+    )
 
 
 # Day the run starts on (and restarts on). 5 = the map with the campsite
@@ -88,9 +119,40 @@ def new_game():
         ROOM_Y + 48
     )
 
-    enemies = create_enemies(map_type, game_manager.day)
+    encounter = create_encounter()
 
-    return game_manager, map_type, map_number, room, player, enemies
+    if encounter.type in [
+        "healing_fountain",
+        "cursed_fountain",
+        "capy_statue",
+        "training_buddy"
+    ]:
+        enemies = []
+    else:
+        encounter = create_encounter()
+
+        if encounter.type in [
+            "healing_fountain",
+            "cursed_fountain",
+            "capy_statue",
+            "training_buddy"
+        ]:
+            enemies = []
+        else:
+            enemies = create_enemies(
+                map_type,
+                game_manager.day
+            )
+
+    return (
+        game_manager,
+        map_type,
+        map_number,
+        room,
+        player,
+        enemies,
+        encounter
+    )
 
 
 def get_restart_button_rect():
@@ -328,7 +390,8 @@ def main():
         map_number,
         room,
         player,
-        enemies
+        enemies,
+        encounter
     ) = new_game()
 
     last_player_attack = 0
@@ -358,6 +421,21 @@ def main():
                     event.key == pygame.K_e
                     and game_manager.state != "GAME_OVER"
                 ):
+                    
+                    if (
+                        encounter.active
+                        and player.rect.colliderect(encounter.rect)
+                    ):
+                        if (
+                            encounter.type in [
+                                "gold_chest",
+                                "mystery_chest"
+                            ]
+                            and enemies
+                        ):
+                            pass
+                        else:
+                            encounter.interact(player)
 
                     if (
                         map_type == "normal"
@@ -386,7 +464,8 @@ def main():
                         map_number,
                         room,
                         player,
-                        enemies
+                        enemies,
+                        encounter
                     ) = new_game()
 
                     last_player_attack = 0
@@ -446,9 +525,9 @@ def main():
                             map_number,
                             room,
                             player,
-                            enemies
+                            enemies,
+                            encounter
                         ) = new_game()
-
                         last_player_attack = 0
                         skill_menu_open = False
                         skill_effect = None
@@ -542,6 +621,9 @@ def main():
 
         for enemy in enemies:
             enemy.draw(screen)
+
+        encounter.update()
+        encounter.draw(screen)
 
         player.draw(screen)
 

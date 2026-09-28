@@ -38,14 +38,14 @@ class Player:
         self.last_skill_use = -3000
 
         self.idle_image = pygame.image.load(
-            "assets/images/idle1.png"
+            "assets/images/player/idle1.png"
         ).convert_alpha()
 
         self.run_images = []
 
         for i in range(1, 6):
             image = pygame.image.load(
-                f"assets/images/run{i}.png"
+                f"assets/images/player/run{i}.png"
             ).convert_alpha()
 
             self.run_images.append(image)
@@ -55,11 +55,11 @@ class Player:
 
         for i in range(1, 6):
             right_image = pygame.image.load(
-                f"assets/images/attack_right{i}.png"
+                f"assets/images/player/attack_right{i}.png"
             ).convert_alpha()
 
             left_image = pygame.image.load(
-                f"assets/images/attack_left{i}.png"
+                f"assets/images/player/attack_left{i}.png"
             ).convert_alpha()
 
             self.attack_right_images.append(right_image)
