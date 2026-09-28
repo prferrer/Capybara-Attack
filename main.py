@@ -16,6 +16,7 @@ from entities.enemy import Enemy
 from maps.room import Room
 from systems.game_manager import GameManager
 from systems.skill import SkillEffect
+from systems.start_screen import run_start_screen
 
 
 def get_map_info(day):
@@ -67,6 +68,75 @@ def create_enemies(map_type, day):
         Enemy(x, y, enemy_type, day)
         for x, y in positions[:enemy_count]
     ]
+
+
+# Day the run starts on (and restarts on). 5 = the map with the campsite
+# where you choose a skill. Change to 1 for a normal start from day 1.
+START_DAY = 5
+
+
+def new_game():
+    game_manager = GameManager()
+    game_manager.day = START_DAY
+
+    map_type, map_number = get_map_info(game_manager.day)
+
+    room = Room(map_number, map_type)
+
+    player = Player(
+        ROOM_X + 48,
+        ROOM_Y + 48
+    )
+
+    enemies = create_enemies(map_type, game_manager.day)
+
+    return game_manager, map_type, map_number, room, player, enemies
+
+
+def get_restart_button_rect():
+    button_rect = pygame.Rect(0, 0, 280, 70)
+    button_rect.center = (SCREEN_WIDTH // 2, 400)
+    return button_rect
+
+
+def draw_game_over(screen, big_font, button_font, mouse_position):
+    overlay = pygame.Surface(
+        (SCREEN_WIDTH, SCREEN_HEIGHT),
+        pygame.SRCALPHA
+    )
+
+    overlay.fill((0, 0, 0, 190))
+    screen.blit(overlay, (0, 0))
+
+    title = big_font.render("GAME OVER", True, (255, 80, 80))
+    title_shadow = big_font.render("GAME OVER", True, (0, 0, 0))
+    title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 230))
+
+    screen.blit(title_shadow, title_rect.move(4, 4))
+    screen.blit(title, title_rect)
+
+    button_rect = get_restart_button_rect()
+
+    if button_rect.collidepoint(mouse_position):
+        button_color = (110, 150, 90)
+    else:
+        button_color = (80, 115, 65)
+
+    pygame.draw.rect(screen, button_color, button_rect, border_radius=12)
+    pygame.draw.rect(
+        screen,
+        (220, 200, 120),
+        button_rect,
+        3,
+        border_radius=12
+    )
+
+    label = button_font.render("RESTART", True, COLOR_TEXT)
+
+    screen.blit(
+        label,
+        label.get_rect(center=button_rect.center)
+    )
 
 
 def draw_hud(screen, font, player):
@@ -235,29 +305,23 @@ def main():
     pygame.display.set_caption(GAME_TITLE)
 
     clock = pygame.time.Clock()
+
+    if not run_start_screen(screen, clock):
+        pygame.quit()
+        return
+
     font = pygame.font.Font(None, 28)
+    big_font = pygame.font.Font(None, 160)
+    button_font = pygame.font.Font(None, 52)
 
-    game_manager = GameManager()
-    game_manager.day = 5
-
-    map_type, map_number = get_map_info(
-        game_manager.day
-    )
-
-    room = Room(
+    (
+        game_manager,
+        map_type,
         map_number,
-        map_type
-    )
-
-    player = Player(
-        ROOM_X + 48,
-        ROOM_Y + 48
-    )
-
-    enemies = create_enemies(
-    map_type,
-    game_manager.day
-    )
+        room,
+        player,
+        enemies
+    ) = new_game()
 
     last_player_attack = 0
     player_attack_cooldown = 1000
@@ -265,6 +329,9 @@ def main():
     skill_menu_open = False
     skill_buttons = []
     skill_effect = None
+
+    # shown briefly when SPACE is pressed while enemies are still alive
+    blocked_message_until = 0
 
     running = True
 
@@ -279,7 +346,10 @@ def main():
 
             if event.type == pygame.KEYDOWN:
 
-                if event.key == pygame.K_e:
+                if (
+                    event.key == pygame.K_e
+                    and game_manager.state != "GAME_OVER"
+                ):
 
                     if (
                         map_type == "normal"
@@ -298,7 +368,37 @@ def main():
                         ):
                             skill_menu_open = True
 
-                if event.key == pygame.K_SPACE:
+                if (
+                    game_manager.state == "GAME_OVER"
+                    and event.key in (pygame.K_RETURN, pygame.K_r)
+                ):
+                    (
+                        game_manager,
+                        map_type,
+                        map_number,
+                        room,
+                        player,
+                        enemies
+                    ) = new_game()
+
+                    last_player_attack = 0
+                    skill_menu_open = False
+                    skill_effect = None
+
+                elif (
+                    event.key == pygame.K_SPACE
+                    and game_manager.state != "GAME_OVER"
+                    and enemies
+                ):
+                    # can't leave until every enemy on this map is dead
+                    blocked_message_until = (
+                        pygame.time.get_ticks() + 1800
+                    )
+
+                elif (
+                    event.key == pygame.K_SPACE
+                    and game_manager.state != "GAME_OVER"
+                ):
 
                     if not skill_menu_open:
 
@@ -325,7 +425,27 @@ def main():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
 
-                if event.button == 1:
+                if (
+                    event.button == 1
+                    and game_manager.state == "GAME_OVER"
+                ):
+                    if get_restart_button_rect().collidepoint(
+                        mouse_position
+                    ):
+                        (
+                            game_manager,
+                            map_type,
+                            map_number,
+                            room,
+                            player,
+                            enemies
+                        ) = new_game()
+
+                        last_player_attack = 0
+                        skill_menu_open = False
+                        skill_effect = None
+
+                elif event.button == 1:
 
                     if skill_menu_open:
 
@@ -354,7 +474,10 @@ def main():
 
         current_time = pygame.time.get_ticks()
 
-        if not skill_menu_open:
+        if (
+            not skill_menu_open
+            and game_manager.state != "GAME_OVER"
+        ):
 
             for enemy in enemies:
                 enemy.update(player)
@@ -432,6 +555,7 @@ def main():
         if (
             skill_button
             and not skill_menu_open
+            and game_manager.state != "GAME_OVER"
             and pygame.mouse.get_pressed()[0]
             and skill_button.collidepoint(
                 mouse_position
@@ -529,20 +653,40 @@ def main():
                     )
                 )
 
+        if game_manager.state != "GAME_OVER" and not skill_menu_open:
+
+            if current_time < blocked_message_until:
+                next_day_text = font.render(
+                    "Defeat all enemies first!",
+                    True,
+                    (255, 100, 100)
+                )
+            elif not enemies:
+                next_day_text = font.render(
+                    "Area cleared! Press SPACE to continue",
+                    True,
+                    (255, 235, 150)
+                )
+            else:
+                next_day_text = None
+
+            if next_day_text:
+                screen.blit(
+                    next_day_text,
+                    (
+                        SCREEN_WIDTH // 2
+                        - next_day_text.get_width() // 2,
+                        SCREEN_HEIGHT - 62
+                    )
+                )
+
         if game_manager.state == "GAME_OVER":
 
-            game_over_text = font.render(
-                "GAME OVER",
-                True,
-                (255, 80, 80)
-            )
-
-            screen.blit(
-                game_over_text,
-                (
-                    SCREEN_WIDTH // 2 - 70,
-                    20
-                )
+            draw_game_over(
+                screen,
+                big_font,
+                button_font,
+                mouse_position
             )
 
         pygame.display.flip()
