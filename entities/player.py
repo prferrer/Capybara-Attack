@@ -27,6 +27,8 @@ class Player:
         self.defense = 5
         self.gold = 0
         self.inventory = []
+        self.inventory_slots = 6
+        self.gold_multiplier = 1.0
         
         #Added attack sound effect for the player
         self.attack_sound = pygame.mixer.Sound("assets/audio/capyslay.mp3")
