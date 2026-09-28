@@ -297,6 +297,11 @@ def draw_skill_menu(screen, font):
 
 def main():
     pygame.init()
+    
+    #Loading Screen Music
+    pygame.mixer.init()
+    pygame.mixer.music.load("assets/audio/capyloadscreenmusic.mp3")
+    pygame.mixer.music.play(-1)
 
     screen = pygame.display.set_mode(
         (SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -309,6 +314,9 @@ def main():
     if not run_start_screen(screen, clock):
         pygame.quit()
         return
+    
+    #Stop Music when pressing start
+    pygame.mixer.music.stop()
 
     font = pygame.font.Font(None, 28)
     big_font = pygame.font.Font(None, 160)

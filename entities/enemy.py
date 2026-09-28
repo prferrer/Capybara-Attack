@@ -170,6 +170,7 @@ class Enemy:
                 )
 
                 player.hp -= damage
+                player.hit_sound.play()  # Play capyhit sound effect
                 self.last_attack_time = current_time
 
         else:

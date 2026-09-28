@@ -27,7 +27,11 @@ class Player:
         self.defense = 5
         self.gold = 0
         self.inventory = []
-
+        
+        #Added attack sound effect for the player
+        self.attack_sound = pygame.mixer.Sound("assets/audio/capyslay.mp3")
+        self.hit_sound = pygame.mixer.Sound("assets/audio/capygothit.mp3")
+        
         self.selected_skill = None
         self.skill_damage = 0
         self.skill_cooldown = 3000
@@ -163,6 +167,8 @@ class Player:
             self.is_attacking = True
             self.current_frame = 0
             self.animation_timer = 0
+            
+            self.attack_sound.play()  # Play capyslay
 
     def draw(self, screen):
         if self.is_attacking:
