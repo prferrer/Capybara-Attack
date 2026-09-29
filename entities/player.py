@@ -10,6 +10,11 @@ from settings import (
     TILE_SIZE
 )
 
+MAX_HP_LIMIT = 300
+MAX_ATTACK_LIMIT = 100
+MAX_DEFENSE_LIMIT = 50
+MAX_GOLD_LIMIT = 9999
+
 
 class Player:
     def __init__(self, x, y):
@@ -103,6 +108,38 @@ class Player:
         self.facing_right = True
         self.is_moving = False
         self.is_attacking = False
+        
+    def add_gold(self, amount):
+        self.gold = min(
+        MAX_GOLD_LIMIT,
+        self.gold + amount
+    )
+
+    def increase_attack(self, amount):
+        self.attack = min(
+            MAX_ATTACK_LIMIT,
+            self.attack + amount
+        )
+
+    def increase_defense(self, amount):
+        self.defense = min(
+            MAX_DEFENSE_LIMIT,
+            self.defense + amount
+        )
+
+    def increase_max_hp(self, amount):
+        old_max_hp = self.max_hp
+
+        self.max_hp = min(
+            MAX_HP_LIMIT,
+            self.max_hp + amount
+        )
+
+        actual_increase = self.max_hp - old_max_hp
+        self.hp = min(
+            self.max_hp,
+            self.hp + actual_increase
+        )
 
     def update(self, walls):
         keys = pygame.key.get_pressed()

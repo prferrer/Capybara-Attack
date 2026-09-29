@@ -19,7 +19,7 @@ from systems.game_manager import GameManager
 from systems.skill import SkillEffect
 from systems.start_screen import run_start_screen
 from systems.encounter import Encounter
-from systems.item import ItemPickup
+from systems.item import ItemPickup, ITEM_DATA, give_item
 
 
 def get_map_info(day):
@@ -104,27 +104,6 @@ def create_encounter():
         x,
         y
     )
-
-
-def create_item():
-    item_type = random.choice([
-        "iron_claw",
-        "iron_armor",
-        "heart_medallion",
-        "lucky_coin",
-        "stopwatch",
-        "spellbook"
-    ])
-
-    x = ROOM_X + random.randint(100, 650)
-    y = ROOM_Y + random.randint(100, 350)
-
-    return ItemPickup(
-        item_type,
-        x,
-        y
-    )
-
 
 START_DAY = 5
 
@@ -561,6 +540,141 @@ def draw_skill_menu(screen, font):
 
     return buttons
 
+def draw_merchant_menu(screen, font, player, encounter):
+    overlay = pygame.Surface(
+        (SCREEN_WIDTH, SCREEN_HEIGHT),
+        pygame.SRCALPHA
+    )
+
+    overlay.fill(
+        (0, 0, 0, 180)
+    )
+
+    screen.blit(
+        overlay,
+        (0, 0)
+    )
+
+    window = pygame.Rect(
+        SCREEN_WIDTH // 2 - 300,
+        80,
+        600,
+        440
+    )
+
+    pygame.draw.rect(
+        screen,
+        (45, 55, 45),
+        window,
+        border_radius=15
+    )
+
+    pygame.draw.rect(
+        screen,
+        (220, 200, 120),
+        window,
+        3,
+        border_radius=15
+    )
+
+    title = font.render(
+        "MERCHANT",
+        True,
+        COLOR_TEXT
+    )
+
+    screen.blit(
+        title,
+        (
+            window.centerx - title.get_width() // 2,
+            window.y + 25
+        )
+    )
+
+    gold_text = font.render(
+        f"Gold: {player.gold}",
+        True,
+        (255, 220, 80)
+    )
+
+    screen.blit(
+        gold_text,
+        (
+            window.x + 25,
+            window.y + 75
+        )
+    )
+
+    buttons = []
+
+    for index, (item_type, price) in enumerate(
+        encounter.shop_items
+    ):
+        button = pygame.Rect(
+            window.x + 40,
+            window.y + 120 + index * 75,
+            520,
+            60
+        )
+
+        pygame.draw.rect(
+            screen,
+            (70, 85, 70),
+            button,
+            border_radius=8
+        )
+
+        item_name = ITEM_DATA[item_type]["name"]
+
+        text = font.render(
+            f"{item_name} - {price} Gold",
+            True,
+            COLOR_TEXT
+        )
+
+        screen.blit(
+            text,
+            (
+                button.x + 20,
+                button.centery - text.get_height() // 2
+            )
+        )
+
+        buttons.append(
+            (button, item_type, price)
+        )
+
+    close_button = pygame.Rect(
+        window.centerx - 100,
+        window.bottom - 65,
+        200,
+        45
+    )
+
+    pygame.draw.rect(
+        screen,
+        (90, 60, 60),
+        close_button,
+        border_radius=8
+    )
+
+    close_text = font.render(
+        "CLOSE",
+        True,
+        COLOR_TEXT
+    )
+
+    screen.blit(
+        close_text,
+        (
+            close_button.centerx
+            - close_text.get_width() // 2,
+            close_button.centery
+            - close_text.get_height() // 2
+        )
+    )
+
+    return buttons, close_button
 
 def main():
     pygame.init()
@@ -625,10 +739,6 @@ def main():
 
     items = []
 
-    if random.random() < 0.25:
-        items.append(
-            create_item()
-        )
 
     last_player_attack = 0
     player_attack_cooldown = 1000
@@ -636,6 +746,9 @@ def main():
     skill_menu_open = False
     skill_buttons = []
     skill_effect = None
+    
+    merchant_menu_open = False
+    
 
     blocked_message_until = 0
 
@@ -679,7 +792,10 @@ def main():
                         )
                     ):
 
-                        if (
+                        if encounter.type == "merchant":
+                            merchant_menu_open = True
+
+                        elif (
                             encounter.type in [
                                 "gold_chest",
                                 "mystery_chest"
@@ -731,11 +847,6 @@ def main():
 
                     items = []
 
-                    if random.random() < 0.25:
-                        items.append(
-                            create_item()
-                        )
-
                     last_player_attack = 0
                     skill_menu_open = False
                     skill_effect = None
@@ -756,7 +867,7 @@ def main():
                     and game_manager.state != "GAME_OVER"
                 ):
 
-                    if not skill_menu_open:
+                    if not skill_menu_open and not merchant_menu_open:  
 
                         game_manager.next_day()
 
@@ -767,12 +878,8 @@ def main():
                         encounter = create_encounter()
 
                         items = []
-
-                        if random.random() < 0.25:
-                            items.append(
-                                create_item()
-                            )
-
+                        merchant_menu_open = False
+                        
                         room = Room(
                             map_number,
                             map_type
@@ -820,17 +927,49 @@ def main():
                         ) = new_game()
 
                         items = []
-
-                        if random.random() < 0.25:
-                            items.append(
-                                create_item()
-                            )
+                        merchant_menu_open = False
 
                         last_player_attack = 0
                         skill_menu_open = False
                         skill_effect = None
 
                 elif event.button == 1:
+                    
+                    if merchant_menu_open:
+
+                        merchant_buttons, close_button = draw_merchant_menu(
+                            screen,
+                            font,
+                            player,
+                            encounter
+                        )
+
+                        if close_button.collidepoint(
+                            mouse_position
+                        ):
+                            merchant_menu_open = False
+
+                        else:
+                            from systems.item import give_item
+
+                            for button, item_type, price in merchant_buttons:
+
+                                if button.collidepoint(
+                                    mouse_position
+                                ):
+
+                                    if (
+                                        player.gold >= price
+                                        and len(player.inventory)
+                                        < player.inventory_slots
+                                    ):
+                                        if give_item(
+                                            player,
+                                            item_type
+                                        ):
+                                            player.gold -= price
+
+                        continue
 
                     if skill_menu_open:
 
@@ -855,13 +994,17 @@ def main():
 
         if game_manager.state == "EXPLORING":
 
-            if not skill_menu_open:
+            if (
+                not skill_menu_open
+                and not merchant_menu_open
+            ):
                 player.update([])
 
         current_time = pygame.time.get_ticks()
 
         if (
             not skill_menu_open
+            and not merchant_menu_open
             and game_manager.state != "GAME_OVER"
         ):
 
@@ -899,9 +1042,9 @@ def main():
                     last_player_attack = current_time
 
                     if not enemy.alive:
-                        player.gold += int(
-                            10 * player.gold_multiplier
-                        )
+                        player.add_gold(
+                        int(10 * player.gold_multiplier)
+                    )
 
         enemies = [
             enemy
@@ -932,9 +1075,9 @@ def main():
         encounter.update()
 
         encounter.complete_reward(
-            player
+            player,
+            items
         )
-
         encounter.draw(
             screen
         )
@@ -1037,15 +1180,24 @@ def main():
                     )
 
                     if not nearest_enemy.alive:
-                        player.gold += int(
-                            20 * player.gold_multiplier
-                        )
+                        player.add_gold(
+                        int(20 * player.gold_multiplier)
+                    )
 
         if skill_menu_open:
 
             skill_buttons = draw_skill_menu(
                 screen,
                 font
+            )
+
+        if merchant_menu_open:
+
+            draw_merchant_menu(
+                screen,
+                font,
+                player,
+                encounter
             )
 
         if (

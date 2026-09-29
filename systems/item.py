@@ -34,6 +34,38 @@ ITEM_DATA = {
     }
 }
 
+def give_item(player, item_type):
+    if len(player.inventory) >= player.inventory_slots:
+        return False
+
+    player.inventory.append(item_type)
+
+    data = ITEM_DATA[item_type]
+    stat = data["stat"]
+    value = data["value"]
+
+    if stat == "attack":
+        player.increase_attack(value)
+
+    elif stat == "defense":
+        player.increase_defense(value)
+
+    elif stat == "max_hp":
+        player.increase_max_hp(value)
+
+    elif stat == "gold_multiplier":
+        player.gold_multiplier += value
+
+    elif stat == "cooldown":
+        player.skill_cooldown = max(
+            500,
+            player.skill_cooldown - value
+        )
+
+    elif stat == "skill_damage":
+        player.skill_damage += value
+
+    return True
 
 class ItemPickup:
     def __init__(self, item_type, x, y):
@@ -62,36 +94,11 @@ class ItemPickup:
 
         if len(player.inventory) >= player.inventory_slots:
             return False
+        if give_item(player, self.type):
+            self.active = False
+            return True
 
-        player.inventory.append(self.type)
-
-        stat = self.data["stat"]
-        value = self.data["value"]
-
-        if stat == "attack":
-            player.attack += value
-
-        elif stat == "defense":
-            player.defense += value
-
-        elif stat == "max_hp":
-            player.max_hp += value
-            player.hp += value
-
-        elif stat == "gold_multiplier":
-            player.gold_multiplier += value
-
-        elif stat == "cooldown":
-            player.skill_cooldown = max(
-                500,
-                player.skill_cooldown - value
-            )
-
-        elif stat == "skill_damage":
-            player.skill_damage += value
-
-        self.active = False
-        return True
+        return False
 
     def draw(self, screen):
         if self.active:

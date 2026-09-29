@@ -10,7 +10,7 @@ class SkillEffect:
 
         for i in range(1, 6):
             if skill == "Fire":
-                filename = f"assets/images/skills/skills/fire_right{i}.png"
+                filename = f"assets/images/skills/fire_right{i}.png"
             elif skill == "Ice":
                 filename = f"assets/images/skills/ice{i}.png"
             else:

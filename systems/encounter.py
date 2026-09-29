@@ -1,6 +1,7 @@
 import random
 import pygame
 
+from systems.item import ITEM_DATA, ItemPickup
 
 class Encounter:
     def __init__(self, encounter_type, x, y):
@@ -8,6 +9,12 @@ class Encounter:
         self.active = True
         self.interacting = False
         self.finished = False
+        
+        self.shop_items = [
+            ("iron_claw", 50),
+            ("iron_armor", 50),
+            ("spellbook", 80)
+        ]
 
         frame_counts = {
             "gold_chest": 4,
@@ -102,32 +109,37 @@ class Encounter:
         elif self.type == "cursed_fountain":
             player.hp -= int(player.max_hp * 0.20)
             player.hp = max(player.hp, 1)
-            player.gold += 40
+            player.add_gold(40)
             self.active = False
 
         elif self.type == "training_buddy":
-            player.attack += 5
+            player.increase_attack(5)
             self.active = False
 
         elif self.type == "merchant":
             pass
 
-    def complete_reward(self, player):
+    def complete_reward(self, player, items):
         if not self.finished:
             return
 
         if self.type == "gold_chest":
-            player.gold += random.randint(15, 30)
+            player.add_gold(
+                random.randint(15, 30)
+            )
 
         elif self.type == "mystery_chest":
             reward = random.choice([
                 "gold",
                 "heal",
-                "attack"
+                "attack",
+                "item"
             ])
 
             if reward == "gold":
-                player.gold += random.randint(25, 50)
+                player.add_gold(
+                    random.randint(25, 50)
+                )
 
             elif reward == "heal":
                 player.hp = min(
@@ -135,15 +147,33 @@ class Encounter:
                     player.hp + 30
                 )
 
-            else:
-                player.attack += 3
+            elif reward == "attack":
+                player.increase_attack(3)
+
+            elif reward == "item":
+                item_type = random.choice([
+                    "iron_claw",
+                    "iron_armor",
+                    "heart_medallion",
+                    "lucky_coin",
+                    "stopwatch",
+                    "spellbook"
+                ])
+
+                items.append(
+                    ItemPickup(
+                        item_type,
+                        self.rect.centerx,
+                        self.rect.centery
+                    )
+                )
 
         elif self.type == "capy_statue":
-            player.max_hp += 20
-            player.hp += 20
+            player.increase_max_hp(20)
 
         self.active = False
-
+        self.finished = False
+            
     def draw(self, screen):
         if not self.active:
             return
