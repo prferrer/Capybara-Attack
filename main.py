@@ -594,6 +594,9 @@ def main():
         return
 
     pygame.mixer.music.stop()
+    
+    pygame.mixer.music.load("assets/audio/capybgmusic.mp3") #Medieval Music Vibez
+    pygame.mixer.music.play(-1)
 
     font = pygame.font.Font(
         None,
