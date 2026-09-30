@@ -19,7 +19,14 @@ from systems.game_manager import GameManager
 from systems.skill import SkillEffect
 from systems.start_screen import run_start_screen
 from systems.encounter import Encounter
-from systems.item import ItemPickup, ITEM_DATA, give_item
+from systems.item import (
+    ItemPickup,
+    HeartPickup,
+    ITEM_DATA,
+    give_item,
+    remove_item,
+    consume_item
+)
 
 
 def get_map_info(day):
@@ -284,7 +291,7 @@ def draw_hud(screen, font, player):
     )
 
 
-def draw_backpack(screen, font, player):
+def draw_backpack(screen, font, player, backpack_menu_open):
     backpack_rect = pygame.Rect(
         10,
         45,
@@ -314,12 +321,237 @@ def draw_backpack(screen, font, player):
 
     screen.blit(
         slot_text,
+        (65, 60)
+    )
+
+    if not backpack_menu_open:
+        return backpack_rect, []
+
+    overlay = pygame.Surface(
+        (SCREEN_WIDTH, SCREEN_HEIGHT),
+        pygame.SRCALPHA
+    )
+
+    overlay.fill(
+        (0, 0, 0, 180)
+    )
+
+    screen.blit(
+        overlay,
+        (0, 0)
+    )
+
+    window = pygame.Rect(
+        SCREEN_WIDTH // 2 - 300,
+        60,
+        600,
+        480
+    )
+
+    pygame.draw.rect(
+        screen,
+        (45, 55, 45),
+        window,
+        border_radius=15
+    )
+
+    pygame.draw.rect(
+        screen,
+        (220, 200, 120),
+        window,
+        3,
+        border_radius=15
+    )
+
+    title = font.render(
+        "BACKPACK",
+        True,
+        COLOR_TEXT
+    )
+
+    screen.blit(
+        title,
         (
-            65,
-            60
+            window.centerx
+            - title.get_width() // 2,
+            window.y + 20
         )
     )
 
+    buttons = []
+
+    for index, item_type in enumerate(
+        player.inventory
+    ):
+
+        item_data = ITEM_DATA[item_type]
+
+        row = pygame.Rect(
+            window.x + 25,
+            window.y + 75 + index * 55,
+            550,
+            45
+        )
+
+        pygame.draw.rect(
+            screen,
+            (70, 85, 70),
+            row,
+            border_radius=6
+        )
+
+        item_name = item_data["name"]
+        stat = item_data["stat"]
+        value = item_data["value"]
+
+        if stat == "attack_potion":
+            effect = "+25 ATK"
+        elif stat == "skill_potion":
+            effect = "+25 SKILL DMG"
+        elif stat == "health_potion":
+            effect = "FULL HEAL"
+        elif stat == "gold_multiplier":
+            effect = f"+{int(value * 100)}% GOLD"
+        elif stat == "cooldown":
+            effect = f"-{value}ms COOLDOWN"
+        else:
+            effect = (
+                f"+{value} "
+                f"{stat.replace('_', ' ').upper()}"
+            )
+
+        item_text = font.render(
+            f"{item_name} ({effect})",
+            True,
+            COLOR_TEXT
+        )
+
+        screen.blit(
+            item_text,
+            (
+                row.x + 15,
+                row.centery
+                - item_text.get_height() // 2
+            )
+        )
+
+        if item_data["consumable"]:
+
+            consume_button = pygame.Rect(
+                row.right - 190,
+                row.y + 5,
+                80,
+                35
+            )
+
+            pygame.draw.rect(
+                screen,
+                (70, 110, 70),
+                consume_button,
+                border_radius=5
+            )
+
+            consume_text = font.render(
+                "USE",
+                True,
+                COLOR_TEXT
+            )
+
+            screen.blit(
+                consume_text,
+                (
+                    consume_button.centerx
+                    - consume_text.get_width() // 2,
+                    consume_button.centery
+                    - consume_text.get_height() // 2
+                )
+            )
+
+            buttons.append(
+                (
+                    consume_button,
+                    "consume",
+                    item_type
+                )
+            )
+
+        drop_button = pygame.Rect(
+            row.right - 100,
+            row.y + 5,
+            85,
+            35
+        )
+
+        pygame.draw.rect(
+            screen,
+            (100, 55, 55),
+            drop_button,
+            border_radius=5
+        )
+
+        drop_text = font.render(
+            "DROP",
+            True,
+            COLOR_TEXT
+        )
+
+        screen.blit(
+            drop_text,
+            (
+                drop_button.centerx
+                - drop_text.get_width() // 2,
+                drop_button.centery
+                - drop_text.get_height() // 2
+            )
+        )
+
+        buttons.append(
+            (
+                drop_button,
+                "drop",
+                item_type
+            )
+        )
+
+    close_button = pygame.Rect(
+        window.centerx - 100,
+        window.bottom - 50,
+        200,
+        35
+    )
+
+    pygame.draw.rect(
+        screen,
+        (90, 60, 60),
+        close_button,
+        border_radius=6
+    )
+
+    close_text = font.render(
+        "CLOSE",
+        True,
+        COLOR_TEXT
+    )
+
+    screen.blit(
+        close_text,
+        (
+            close_button.centerx
+            - close_text.get_width() // 2,
+            close_button.centery
+            - close_text.get_height() // 2
+        )
+    )
+
+    buttons.append(
+        (
+            close_button,
+            "close",
+            None
+        )
+    )
+
+    return backpack_rect, buttons
 
 def draw_interaction_indicator(
     screen,
@@ -748,6 +980,8 @@ def main():
     skill_effect = None
     
     merchant_menu_open = False
+    backpack_menu_open = False
+    backpack_buttons = []
     
 
     blocked_message_until = 0
@@ -764,6 +998,13 @@ def main():
                 running = False
 
             if event.type == pygame.KEYDOWN:
+                
+                if (
+                    event.key == pygame.K_b
+                    and game_manager.state != "GAME_OVER"
+                ):
+                    if not merchant_menu_open:
+                        backpack_menu_open = not backpack_menu_open
 
                 if (
                     event.key == pygame.K_e
@@ -867,7 +1108,11 @@ def main():
                     and game_manager.state != "GAME_OVER"
                 ):
 
-                    if not skill_menu_open and not merchant_menu_open:  
+                    if (
+                        not skill_menu_open
+                        and not merchant_menu_open
+                        and not backpack_menu_open
+                    ):
 
                         game_manager.next_day()
 
@@ -879,6 +1124,7 @@ def main():
 
                         items = []
                         merchant_menu_open = False
+                        
                         
                         room = Room(
                             map_number,
@@ -928,12 +1174,65 @@ def main():
 
                         items = []
                         merchant_menu_open = False
-
+                        backpack_menu_open = False
                         last_player_attack = 0
                         skill_menu_open = False
                         skill_effect = None
 
                 elif event.button == 1:
+                    
+                    backpack_icon_rect = pygame.Rect(
+                        10,
+                        45,
+                        50,
+                        50
+                    )
+
+                    if (
+                        not backpack_menu_open
+                        and not merchant_menu_open
+                        and backpack_icon_rect.collidepoint(mouse_position)
+                    ):
+                        backpack_menu_open = True
+                        continue
+                    
+                    if backpack_menu_open:
+
+                        for (
+                            button,
+                            action,
+                            item_type
+                        ) in backpack_buttons:
+
+                            if button.collidepoint(
+                                mouse_position
+                            ):
+
+                                if action == "close":
+                                    backpack_menu_open = False
+
+                                elif action == "consume":
+                                    consume_item(
+                                        player,
+                                        item_type
+                                    )
+
+                                elif action == "drop":
+                                    if remove_item(
+                                        player,
+                                        item_type
+                                    ):
+                                        items.append(
+                                            ItemPickup(
+                                                item_type,
+                                                player.rect.centerx,
+                                                player.rect.centery
+                                            )
+                                        )
+
+                                break
+
+                        continue
                     
                     if merchant_menu_open:
 
@@ -950,8 +1249,6 @@ def main():
                             merchant_menu_open = False
 
                         else:
-                            from systems.item import give_item
-
                             for button, item_type, price in merchant_buttons:
 
                                 if button.collidepoint(
@@ -963,6 +1260,7 @@ def main():
                                         and len(player.inventory)
                                         < player.inventory_slots
                                     ):
+
                                         if give_item(
                                             player,
                                             item_type
@@ -989,7 +1287,7 @@ def main():
                             ):
 
                                 player.selected_skill = name
-                                player.skill_damage = damage
+                                player.skill_damage += damage
                                 skill_menu_open = False
 
         if game_manager.state == "EXPLORING":
@@ -997,6 +1295,7 @@ def main():
             if (
                 not skill_menu_open
                 and not merchant_menu_open
+                and not backpack_menu_open
             ):
                 player.update([])
 
@@ -1005,6 +1304,7 @@ def main():
         if (
             not skill_menu_open
             and not merchant_menu_open
+            and not backpack_menu_open
             and game_manager.state != "GAME_OVER"
         ):
 
@@ -1043,13 +1343,29 @@ def main():
 
                     if not enemy.alive:
                         player.add_gold(
-                        int(10 * player.gold_multiplier)
-                    )
+                            int(
+                                10
+                                * player.gold_multiplier
+                            )
+                        )
+
+                        items.append(
+                            HeartPickup(
+                                enemy.rect.centerx,
+                                enemy.rect.centery
+                            )
+                        )
 
         enemies = [
             enemy
             for enemy in enemies
             if enemy.alive
+        ]
+        
+        items = [
+            item
+            for item in items
+            if item.active
         ]
 
         if skill_effect:
@@ -1083,6 +1399,23 @@ def main():
         )
 
         for item in items:
+
+            if isinstance(
+                item,
+                HeartPickup
+            ):
+                item.update()
+
+                if (
+                    item.active
+                    and player.rect.colliderect(
+                        item.rect
+                    )
+                ):
+                    item.collect(
+                        player
+                    )
+
             item.draw(
                 screen
             )
@@ -1109,10 +1442,11 @@ def main():
             player
         )
 
-        draw_backpack(
+        backpack_icon_rect, backpack_buttons = draw_backpack(
             screen,
             font,
-            player
+            player,
+            backpack_menu_open
         )
 
         skill_button = draw_skill_button(
@@ -1137,10 +1471,27 @@ def main():
                 >= player.skill_cooldown
             ):
 
-                nearest_enemy = None
-                nearest_distance = float("inf")
+                skill_enemies = []
 
                 for enemy in enemies:
+
+                    if not enemy.alive:
+                        continue
+
+                    dx = (
+                        enemy.rect.centerx
+                        - player.rect.centerx
+                    )
+
+                    dy = abs(
+                        enemy.rect.centery
+                        - player.rect.centery
+                    )
+
+                    if player.facing_right:
+                        in_front = dx > 0
+                    else:
+                        in_front = dx < 0
 
                     distance = pygame.math.Vector2(
                         player.rect.center
@@ -1148,14 +1499,16 @@ def main():
                         enemy.rect.center
                     )
 
-                    if distance < nearest_distance:
-                        nearest_enemy = enemy
-                        nearest_distance = distance
+                    if (
+                        in_front
+                        and distance <= 180
+                        and dy <= 100
+                    ):
+                        skill_enemies.append(
+                            enemy
+                        )
 
-                if (
-                    nearest_enemy
-                    and nearest_distance <= 180
-                ):
+                if skill_enemies:
 
                     skill_effect = SkillEffect(
                         player.selected_skill,
@@ -1171,19 +1524,31 @@ def main():
                         player.facing_right
                     )
 
-                    nearest_enemy.take_damage(
-                        player.skill_damage
-                    )
+                    for enemy in skill_enemies:
+
+                        enemy.take_damage(
+                            player.skill_damage
+                        )
+
+                        if not enemy.alive:
+
+                            player.add_gold(
+                                int(
+                                    20
+                                    * player.gold_multiplier
+                                )
+                            )
+
+                            items.append(
+                                HeartPickup(
+                                    enemy.rect.centerx,
+                                    enemy.rect.centery
+                                )
+                            )
 
                     player.last_skill_use = (
                         current_time
                     )
-
-                    if not nearest_enemy.alive:
-                        player.add_gold(
-                        int(20 * player.gold_multiplier)
-                    )
-
         if skill_menu_open:
 
             skill_buttons = draw_skill_menu(

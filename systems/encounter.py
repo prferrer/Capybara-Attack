@@ -157,7 +157,10 @@ class Encounter:
                     "heart_medallion",
                     "lucky_coin",
                     "stopwatch",
-                    "spellbook"
+                    "spellbook",
+                    "attack_potion",
+                    "health_potion",
+                    "skill_potion"
                 ])
 
                 items.append(
