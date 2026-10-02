@@ -133,7 +133,8 @@ class Encounter:
                 "gold",
                 "heal",
                 "attack",
-                "item"
+                "item",
+                "potion"
             ])
 
             if reward == "gold":
@@ -157,7 +158,19 @@ class Encounter:
                     "heart_medallion",
                     "lucky_coin",
                     "stopwatch",
-                    "spellbook",
+                    "spellbook"
+                ])
+
+                items.append(
+                    ItemPickup(
+                        item_type,
+                        self.rect.centerx,
+                        self.rect.centery
+                    )
+                )
+
+            elif reward == "potion":
+                potion_type = random.choice([
                     "attack_potion",
                     "health_potion",
                     "skill_potion"
@@ -165,7 +178,7 @@ class Encounter:
 
                 items.append(
                     ItemPickup(
-                        item_type,
+                        potion_type,
                         self.rect.centerx,
                         self.rect.centery
                     )

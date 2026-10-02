@@ -43,6 +43,7 @@ class Player:
         self.attack_sound.set_volume(0.6)
         self.hit_sound.set_volume(1.0)
         
+        self.skills = []
         self.selected_skill = None
         self.skill_damage = 0
         self.skill_cooldown = 3000
@@ -247,3 +248,40 @@ class Player:
                 )
 
         screen.blit(image, self.rect)
+        
+    def add_skill(self, name, damage):
+        if len(self.skills) >= 3:
+            return False
+
+        if name in [skill[0] for skill in self.skills]:
+            return False
+
+        self.skills.append((name, damage))
+
+        if self.selected_skill is None:
+            self.selected_skill = name
+            self.skill_damage = damage
+
+        return True
+
+    def select_skill(self, index):
+        if 0 <= index < len(self.skills):
+            self.selected_skill = self.skills[index][0]
+            self.skill_damage = self.skills[index][1]
+            return True
+
+        return False
+
+    def replace_skill(self, index, name, damage):
+        if not 0 <= index < len(self.skills):
+            return False
+
+        if name in [skill[0] for skill in self.skills]:
+            return False
+
+        self.skills[index] = (name, damage)
+
+        if self.selected_skill not in [skill[0] for skill in self.skills]:
+            self.select_skill(index)
+
+        return True

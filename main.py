@@ -19,6 +19,11 @@ from systems.game_manager import GameManager
 from systems.skill import SkillEffect
 from systems.start_screen import run_start_screen
 from systems.encounter import Encounter
+from systems.random_event import (
+    build_random_event_choices,
+    apply_random_event,
+    draw_random_event
+)
 from systems.item import (
     ItemPickup,
     HeartPickup,
@@ -81,27 +86,39 @@ def create_enemies(map_type, day):
     ]
 
 
-def create_encounter():
-    encounter_type = random.choices(
-        [
-            "gold_chest",
-            "mystery_chest",
-            "healing_fountain",
-            "cursed_fountain",
-            "capy_statue",
-            "training_buddy",
-            "merchant"
-        ],
-        weights=[
-            27,
-            22,
-            10,
-            9,
-            10,
-            10,
-            12
+def create_encounter(exclude_type=None, force_combat=False):
+    combat_encounters = [
+        "gold_chest",
+        "mystery_chest"
+    ]
+
+    non_combat_encounters = [
+        "healing_fountain",
+        "cursed_fountain",
+        "capy_statue",
+        "training_buddy",
+        "merchant"
+    ]
+
+    if force_combat:
+        encounter_type = random.choices(
+            combat_encounters,
+            weights=[55, 45]
+        )[0]
+
+    else:
+        available = [
+            encounter
+            for encounter in (
+                combat_encounters
+                + non_combat_encounters
+            )
+            if encounter != exclude_type
         ]
-    )[0]
+
+        encounter_type = random.choice(
+            available
+        )
 
     x = ROOM_X + random.randint(100, 650)
     y = ROOM_Y + random.randint(100, 350)
@@ -114,6 +131,13 @@ def create_encounter():
 
 START_DAY = 5
 
+NON_COMBAT_ENCOUNTERS = [
+    "healing_fountain",
+    "cursed_fountain",
+    "capy_statue",
+    "training_buddy",
+    "merchant"
+]
 
 def new_game():
     game_manager = GameManager()
@@ -149,6 +173,10 @@ def new_game():
             game_manager.day
         )
 
+    force_combat_next = (
+        encounter.type in NON_COMBAT_ENCOUNTERS
+    )
+
     return (
         game_manager,
         map_type,
@@ -156,7 +184,8 @@ def new_game():
         room,
         player,
         enemies,
-        encounter
+        encounter,
+        force_combat_next
     )
 
 
@@ -686,20 +715,14 @@ def draw_skill_button(
     return button_rect
 
 
-def draw_skill_menu(screen, font):
+def draw_skill_menu(screen, font, player):
     overlay = pygame.Surface(
         (SCREEN_WIDTH, SCREEN_HEIGHT),
         pygame.SRCALPHA
     )
 
-    overlay.fill(
-        (0, 0, 0, 190)
-    )
-
-    screen.blit(
-        overlay,
-        (0, 0)
-    )
+    overlay.fill((0, 0, 0, 190))
+    screen.blit(overlay, (0, 0))
 
     title = font.render(
         "CHOOSE YOUR SKILL",
@@ -724,18 +747,74 @@ def draw_skill_menu(screen, font):
 
     buttons = []
 
-    for index, (name, damage) in enumerate(skills):
+    if len(player.skills) < 3:
+
+        for name, damage in skills:
+
+            if name in [skill[0] for skill in player.skills]:
+                continue
+
+            index = len(buttons)
+
+            button_rect = pygame.Rect(
+                SCREEN_WIDTH // 2 - 150,
+                180 + index * 100,
+                300,
+                70
+            )
+
+            pygame.draw.rect(
+                screen,
+                (60, 80, 70),
+                button_rect
+            )
+
+            pygame.draw.rect(
+                screen,
+                (220, 200, 120),
+                button_rect,
+                2
+            )
+
+            text = font.render(
+                f"ADD {name}  +{damage} DMG",
+                True,
+                COLOR_TEXT
+            )
+
+            screen.blit(
+                text,
+                (
+                    button_rect.centerx
+                    - text.get_width() // 2,
+                    button_rect.centery
+                    - text.get_height() // 2
+                )
+            )
+
+            buttons.append(
+                (
+                    button_rect,
+                    name,
+                    damage,
+                    "add"
+                )
+            )
+
+    for index, (name, damage) in enumerate(player.skills):
 
         button_rect = pygame.Rect(
-            SCREEN_WIDTH // 2 - 150,
-            180 + index * 100,
-            300,
-            70
+            SCREEN_WIDTH // 2 + 180,
+            180 + index * 80,
+            230,
+            60
         )
 
         pygame.draw.rect(
             screen,
-            (60, 80, 70),
+            (90, 60, 140)
+            if name == player.selected_skill
+            else (60, 80, 70),
             button_rect
         )
 
@@ -747,7 +826,7 @@ def draw_skill_menu(screen, font):
         )
 
         text = font.render(
-            f"{name}  +{damage} DMG",
+            f"{name} +{damage}",
             True,
             COLOR_TEXT
         )
@@ -766,7 +845,8 @@ def draw_skill_menu(screen, font):
             (
                 button_rect,
                 name,
-                damage
+                damage,
+                "select"
             )
         )
 
@@ -991,7 +1071,8 @@ def main():
         room,
         player,
         enemies,
-        encounter
+        encounter,
+        force_combat_next
     ) = new_game()
 
     items = []
@@ -1004,7 +1085,10 @@ def main():
     skill_menu_open = False
     skill_buttons = []
     skill_effect = None
-    
+
+    random_event_open = False
+    random_event_choices = []
+
     merchant_menu_open = False
     backpack_menu_open = False
     backpack_buttons = []
@@ -1027,6 +1111,7 @@ def main():
                 if (
                     event.key == pygame.K_b
                     and game_manager.state != "GAME_OVER"
+                    and not random_event_open
                 ):
                     if not merchant_menu_open:
                         backpack_menu_open = not backpack_menu_open
@@ -1034,6 +1119,7 @@ def main():
                 if (
                     event.key == pygame.K_e
                     and game_manager.state != "GAME_OVER"
+                    and not random_event_open
                 ):
 
                     for item in items:
@@ -1080,7 +1166,7 @@ def main():
                     if (
                         map_type == "normal"
                         and map_number == 5
-                        and player.selected_skill is None
+                        and len(player.skills) < 3
                     ):
 
                         campsite = pygame.Rect(
@@ -1110,14 +1196,17 @@ def main():
                         room,
                         player,
                         enemies,
-                        encounter
-                    ) = new_game()
+                        encounter,
+                        force_combat_next
+                        ) = new_game()
 
                     items = []
 
                     last_player_attack = 0
                     skill_menu_open = False
                     skill_effect = None
+                    random_event_open = False
+                    random_event_choices = []
 
                 elif (
                     event.key == pygame.K_SPACE
@@ -1139,6 +1228,7 @@ def main():
                         not skill_menu_open
                         and not merchant_menu_open
                         and not backpack_menu_open
+                        and not random_event_open
                     ):
 
                         game_manager.next_day()
@@ -1147,7 +1237,15 @@ def main():
                             game_manager.day
                         )
 
-                        encounter = create_encounter()
+                        if force_combat_next:
+                            encounter = create_encounter(
+                                force_combat=True
+                            )
+                            force_combat_next = False
+                        else:
+                            encounter = create_encounter(
+                                exclude_type=encounter.type
+                            )
 
                         items = []
                         merchant_menu_open = False
@@ -1177,6 +1275,20 @@ def main():
                                 map_type,
                                 game_manager.day
                             )
+                            
+                        force_combat_next = (
+                            encounter.type in NON_COMBAT_ENCOUNTERS
+                        )
+                            
+                        random_event_open = random.random() < 0.35
+
+                        if random_event_open:
+                            random_event_choices = build_random_event_choices(
+                                player
+                            )
+
+                            if len(random_event_choices) < 3:
+                                random_event_open = False
 
             if event.type == pygame.MOUSEBUTTONDOWN:
 
@@ -1205,9 +1317,31 @@ def main():
                         last_player_attack = 0
                         skill_menu_open = False
                         skill_effect = None
+                        random_event_open = False
+                        random_event_choices = []
 
                 elif event.button == 1:
-                    
+
+                    if random_event_open:
+                        buttons = draw_random_event(
+                            screen,
+                            font,
+                            random_event_choices
+                        )
+
+                        for index, button in enumerate(buttons):
+                            if button.collidepoint(mouse_position):
+                                apply_random_event(
+                                    player,
+                                    random_event_choices[index]
+                                )
+
+                                random_event_open = False
+                                random_event_choices = []
+                                break
+
+                        continue
+
                     backpack_icon_rect = pygame.Rect(
                         10,
                         45,
@@ -1321,23 +1455,40 @@ def main():
 
                         skill_buttons = draw_skill_menu(
                             screen,
-                            font
+                            font,
+                            player
                         )
 
                         for (
                             button,
                             name,
-                            damage
+                            damage,
+                            action
                         ) in skill_buttons:
 
                             if button.collidepoint(
                                 mouse_position
                             ):
 
-                                player.selected_skill = name
-                                player.skill_damage += damage
-                                skill_menu_open = False
+                                if action == "add":
+                                    player.add_skill(
+                                        name,
+                                        damage
+                                    )
 
+                                elif action == "select":
+                                    player.select_skill(
+                                        next(
+                                            index
+                                            for index, skill in enumerate(
+                                                player.skills
+                                            )
+                                            if skill[0] == name
+                                        )
+                                    )
+
+                                skill_menu_open = False
+                                
         if game_manager.state == "EXPLORING":
 
             if (
@@ -1601,7 +1752,8 @@ def main():
 
             skill_buttons = draw_skill_menu(
                 screen,
-                font
+                font,
+                player
             )
 
         if merchant_menu_open:
@@ -1612,12 +1764,20 @@ def main():
                 player,
                 encounter
             )
+            
+        if random_event_open:
+
+            draw_random_event(
+                screen,
+                font,
+                random_event_choices
+            )
 
         if (
             map_type == "normal"
             and map_number == 5
             and not skill_menu_open
-            and player.selected_skill is None
+            and len(player.skills) < 3
         ):
 
             campsite = pygame.Rect(

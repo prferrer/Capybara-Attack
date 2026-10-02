@@ -302,3 +302,5 @@ class HeartPickup:
                 self.image,
                 self.rect
             )
+            
+    
