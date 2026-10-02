@@ -36,8 +36,12 @@ class Player:
         self.gold_multiplier = 1.0
         
         #Added attack sound effect for the player
-        self.attack_sound = pygame.mixer.Sound("assets/audio/capyslay.mp3")
-        self.hit_sound = pygame.mixer.Sound("assets/audio/capygothit.mp3")
+        self.attack_sound = pygame.mixer.Sound("assets/audio/capyplayer/capyslay.mp3")
+        self.hit_sound = pygame.mixer.Sound("assets/audio/capyplayer/capygothit.mp3")
+        
+        #Volume
+        self.attack_sound.set_volume(0.6)
+        self.hit_sound.set_volume(1.0)
         
         self.selected_skill = None
         self.skill_damage = 0

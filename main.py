@@ -910,15 +910,11 @@ def draw_merchant_menu(screen, font, player, encounter):
 
 def main():
     pygame.init()
-
     pygame.mixer.init()
 
-    pygame.mixer.music.load(
-        "assets/audio/capyloadscreenmusic.mp3"
-    )
-
+    pygame.mixer.music.load("assets/audio/capyplayer/capyloadscreenmusic.mp3")
     pygame.mixer.music.play(-1)
-
+    
     screen = pygame.display.set_mode(
         (
             SCREEN_WIDTH,
@@ -941,8 +937,37 @@ def main():
 
     pygame.mixer.music.stop()
     
-    pygame.mixer.music.load("assets/audio/capybgmusic.mp3") #Medieval Music Vibez
+    pygame.mixer.music.load("assets/audio/capyplayer/capybgmusic.mp3") #Medieval Music Vibez
+    pygame.mixer.music.set_volume(0.4)
     pygame.mixer.music.play(-1)
+    
+        #Hello Merchant sounds for the merchant encounter
+    merchant_sounds = [
+        pygame.mixer.Sound("assets/audio/merchant/welcome1.MP3"),
+        pygame.mixer.Sound("assets/audio/merchant/welcome2.MP3"),
+        pygame.mixer.Sound("assets/audio/merchant/welcome3.MP3")
+    ]
+    
+    #Walang pera
+    merchant_broke_sounds = [
+        pygame.mixer.Sound("assets/audio/merchant/broke1.MP3"),
+        pygame.mixer.Sound("assets/audio/merchant/broke2.MP3"),
+        pygame.mixer.Sound("assets/audio/merchant/broke3.MP3")
+    ]
+    
+    #May pera at pangarap sa buhay
+    merchant_purchase_sounds = [
+        pygame.mixer.Sound("assets/audio/merchant/purchased1.MP3"),
+        pygame.mixer.Sound("assets/audio/merchant/purchased2.MP3"),
+        pygame.mixer.Sound("assets/audio/merchant/purchased3.MP3")
+    ]
+    
+    # byeee
+    merchant_exit_sounds = [
+        pygame.mixer.Sound("assets/audio/merchant/exit1.MP3"),
+        pygame.mixer.Sound("assets/audio/merchant/exit2.MP3"),
+        pygame.mixer.Sound("assets/audio/merchant/exit3.MP3")
+    ]
 
     font = pygame.font.Font(
         None,
@@ -971,9 +996,10 @@ def main():
 
     items = []
 
-
     last_player_attack = 0
     player_attack_cooldown = 1000
+    last_broke_sound_time = 0
+    last_purchase_sound_time = 0
 
     skill_menu_open = False
     skill_buttons = []
@@ -983,7 +1009,6 @@ def main():
     backpack_menu_open = False
     backpack_buttons = []
     
-
     blocked_message_until = 0
 
     running = True
@@ -1034,6 +1059,8 @@ def main():
                     ):
 
                         if encounter.type == "merchant":
+                            if not merchant_menu_open:
+                                random.choice(merchant_sounds).play()
                             merchant_menu_open = True
 
                         elif (
@@ -1246,6 +1273,7 @@ def main():
                         if close_button.collidepoint(
                             mouse_position
                         ):
+                            random.choice(merchant_exit_sounds).play()
                             merchant_menu_open = False
 
                         else:
@@ -1254,20 +1282,40 @@ def main():
                                 if button.collidepoint(
                                     mouse_position
                                 ):
+                                    
+                                                                        
+                                    if player.gold < price:
+                                        now = pygame.time.get_ticks()
+                                                                                
+                                        if now - last_broke_sound_time > 1500:
+                                            for sound in merchant_broke_sounds:
+                                                sound.stop()
+                                                
+                                            random.choice(merchant_broke_sounds).play()
+                                            last_broke_sound_time = now # Reset the timer
 
-                                    if (
-                                        player.gold >= price
-                                        and len(player.inventory)
-                                        < player.inventory_slots
-                                    ):
+                                    elif len(player.inventory) >= player.inventory_slots:
+                                        pass 
 
+                                    else:
                                         if give_item(
                                             player,
                                             item_type
                                         ):
                                             player.gold -= price
-
-                        continue
+                                            
+                                            now = pygame.time.get_ticks()
+                                            
+                                            if now - last_purchase_sound_time > 1500:
+                                                for sound in merchant_purchase_sounds:
+                                                    sound.stop()
+                                                    
+                                                random.choice(merchant_purchase_sounds).play()
+                                                last_purchase_sound_time = now # Reset the timer
+                                    
+                                    break
+                                    
+                            continue
 
                     if skill_menu_open:
 
