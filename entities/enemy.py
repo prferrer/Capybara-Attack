@@ -27,28 +27,21 @@ class Enemy:
         self.alive = True
         self.aggro_range = 150
         
-        self.hit_sound = None
         self.dead_sound = None
         
         if self.enemy_type == "orc":
-            self.hit_sound = pygame.mixer.Sound("assets/audio/orc/orchit.mp3") #sakto lang
-            self.dead_sound = pygame.mixer.Sound("assets/audio/orc/orcdead.mp3")
+            self.dead_sound = pygame.mixer.Sound("assets/audio/orc/orcdead.mp3") #boses orc
             
-            self.hit_sound.set_volume(0.5)
-            self.dead_sound.set_volume(0.7)
+            self.dead_sound.set_volume(0.8)
         
         elif self.enemy_type == "golem":
-            self.hit_sound = pygame.mixer.Sound("assets/audio/golem/golemhit.mp3") #nonchalant na bato
-            self.dead_sound = pygame.mixer.Sound("assets/audio/golem/golemdead.mp3")
+            self.dead_sound = pygame.mixer.Sound("assets/audio/golem/golemdead.mp3") #nonchalant na bato
 
-            self.hit_sound.set_volume(1.0)
-            self.dead_sound.set_volume(0.9)
+            self.dead_sound.set_volume(1.5)
         
         elif self.enemy_type == "yeti":
-            self.hit_sound = pygame.mixer.Sound("assets/audio/yeti/yetihit.mp3") #oa na sigaw
-            self.dead_sound = pygame.mixer.Sound("assets/audio/yeti/yetidead.mp3")
+            self.dead_sound = pygame.mixer.Sound("assets/audio/yeti/yetidead.mp3") #oa na sigaw
 
-            self.hit_sound.set_volume(0.8)
             self.dead_sound.set_volume(0.9)
 
         if enemy_type == "golem":
@@ -232,10 +225,6 @@ class Enemy:
             
             if self.dead_sound:
                 self.dead_sound.play()
-                
-        else:
-            if self.hit_sound:
-                self.hit_sound.play()
 
     def draw(self, screen):
         if not self.alive:

@@ -1,10 +1,19 @@
 import pygame
 
-
 class SkillEffect:
     def __init__(self, skill, position, facing_right):
         self.skill = skill
         self.facing_right = facing_right
+        
+        if skill == "Fire":
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/firesfx.mp3")
+        elif skill == "Ice":
+            skill_sound= pygame.mixer.Sound("assets/audio/skills/icesfx.mp3")
+        else:
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/lightningsfx.mp3")
+            
+        skill_sound.set_volume(0.6)
+        skill_sound.play()
 
         self.images = []
 
