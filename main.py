@@ -993,6 +993,7 @@ def main():
     pygame.mixer.init()
 
     pygame.mixer.music.load("assets/audio/capyplayer/capyloadscreenmusic.mp3")
+    pygame.mixer.music.set_volume(0.3)
     pygame.mixer.music.play(-1)
     
     screen = pygame.display.set_mode(
@@ -1018,7 +1019,7 @@ def main():
     pygame.mixer.music.stop()
     
     pygame.mixer.music.load("assets/audio/capyplayer/capybgmusic.mp3") #Medieval Music Vibez
-    pygame.mixer.music.set_volume(0.4)
+    pygame.mixer.music.set_volume(0.1)
     pygame.mixer.music.play(-1)
     
         #Hello Merchant sounds for the merchant encounter
