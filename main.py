@@ -636,83 +636,209 @@ def draw_interaction_indicator(
             )
 
 
-def draw_skill_button(
+def draw_skill_buttons(
     screen,
     font,
     player
 ):
-    if player.selected_skill is None:
+    buttons = []
+
+    if not player.skills:
+        return buttons
+
+    button_width = 125
+    button_height = 55
+    gap = 10
+
+    start_x = (
+        SCREEN_WIDTH
+        - (
+            button_width * 3
+            + gap * 2
+        )
+        - 25
+    )
+
+    y = SCREEN_HEIGHT - 80
+
+    for index, (name, damage) in enumerate(player.skills):
+        button_rect = pygame.Rect(
+            start_x + index * (button_width + gap),
+            y,
+            button_width,
+            button_height
+        )
+
+        current_time = pygame.time.get_ticks()
+
+        cooldown_left = (
+            player.skill_cooldown
+            - (
+                current_time
+                - player.last_skill_use
+            )
+        )
+
+        if cooldown_left > 0:
+            button_color = (
+                80,
+                80,
+                80
+            )
+
+            seconds = cooldown_left / 1000
+
+            text = font.render(
+                f"{index + 1} {name} {seconds:.1f}s",
+                True,
+                COLOR_TEXT
+            )
+
+        else:
+            button_color = (
+                90,
+                60,
+                140
+            ) if name == player.selected_skill else (
+                60,
+                80,
+                70
+            )
+
+            text = font.render(
+                f"{index + 1} {name}",
+                True,
+                COLOR_TEXT
+            )
+
+        pygame.draw.rect(
+            screen,
+            button_color,
+            button_rect
+        )
+
+        pygame.draw.rect(
+            screen,
+            (220, 200, 120),
+            button_rect,
+            2
+        )
+
+        screen.blit(
+            text,
+            (
+                button_rect.centerx
+                - text.get_width() // 2,
+                button_rect.centery
+                - text.get_height() // 2
+            )
+        )
+
+        buttons.append(
+            (
+                button_rect,
+                index
+            )
+        )
+
+    return buttons
+def use_skill(
+    player,
+    enemies,
+    items,
+    current_time,
+    skill_index
+):
+    if not 0 <= skill_index < len(player.skills):
         return None
 
-    button_rect = pygame.Rect(
-        SCREEN_WIDTH - 210,
-        SCREEN_HEIGHT - 80,
-        190,
-        55
-    )
+    name, damage = player.skills[skill_index]
 
-    current_time = pygame.time.get_ticks()
+    if (
+        current_time
+        - player.last_skill_use
+        < player.skill_cooldown
+    ):
+        return None
 
-    cooldown_left = (
-        player.skill_cooldown
-        - (
-            current_time
-            - player.last_skill_use
-        )
-    )
+    player.selected_skill = name
+    player.skill_damage = damage
 
-    if cooldown_left > 0:
-        button_color = (
-            80,
-            80,
-            80
-        )
+    skill_enemies = []
 
-        seconds = cooldown_left / 1000
+    for enemy in enemies:
+        if not enemy.alive:
+            continue
 
-        text = font.render(
-            f"{player.selected_skill} {seconds:.1f}s",
-            True,
-            COLOR_TEXT
+        dx = (
+            enemy.rect.centerx
+            - player.rect.centerx
         )
 
-    else:
-        button_color = (
-            90,
-            60,
-            140
+        dy = abs(
+            enemy.rect.centery
+            - player.rect.centery
         )
 
-        text = font.render(
-            f"USE {player.selected_skill}",
-            True,
-            COLOR_TEXT
+        if player.facing_right:
+            in_front = dx > 0
+        else:
+            in_front = dx < 0
+
+        distance = pygame.math.Vector2(
+            player.rect.center
+        ).distance_to(
+            enemy.rect.center
         )
 
-    pygame.draw.rect(
-        screen,
-        button_color,
-        button_rect
-    )
+        if (
+            in_front
+            and distance <= 180
+            and dy <= 100
+        ):
+            skill_enemies.append(enemy)
 
-    pygame.draw.rect(
-        screen,
-        (220, 200, 120),
-        button_rect,
-        2
-    )
+    if not skill_enemies:
+        return None
 
-    screen.blit(
-        text,
+    skill_effect = SkillEffect(
+        player.selected_skill,
         (
-            button_rect.centerx
-            - text.get_width() // 2,
-            button_rect.centery
-            - text.get_height() // 2
-        )
+            player.rect.centerx
+            + (
+                70
+                if player.facing_right
+                else -70
+            ),
+            player.rect.centery
+        ),
+        player.facing_right
     )
 
-    return button_rect
+    for enemy in skill_enemies:
+
+        enemy.take_damage(
+            player.skill_damage
+        )
+
+        if not enemy.alive:
+            player.add_gold(
+                int(
+                    20
+                    * player.gold_multiplier
+                )
+            )
+
+            items.append(
+                HeartPickup(
+                    enemy.rect.centerx,
+                    enemy.rect.centery
+                )
+            )
+
+    player.last_skill_use = current_time
+
+    return skill_effect
 
 
 def draw_skill_menu(screen, font, player):
@@ -1107,6 +1233,28 @@ def main():
                 running = False
 
             if event.type == pygame.KEYDOWN:
+                
+                if (
+                    event.key in (
+                        pygame.K_1,
+                        pygame.K_2,
+                        pygame.K_3
+                    )
+                    and not skill_menu_open
+                    and not merchant_menu_open
+                    and not backpack_menu_open
+                    and not random_event_open
+                    and game_manager.state != "GAME_OVER"
+                ):
+                    skill_index = event.key - pygame.K_1
+
+                    skill_effect = use_skill(
+                        player,
+                        enemies,
+                        items,
+                        pygame.time.get_ticks(),
+                        skill_index
+                    )
                 
                 if (
                     event.key == pygame.K_b
@@ -1648,106 +1796,35 @@ def main():
             backpack_menu_open
         )
 
-        skill_button = draw_skill_button(
+        skill_buttons = draw_skill_buttons(
             screen,
             font,
             player
         )
 
-        if (
-            skill_button
-            and not skill_menu_open
-            and game_manager.state != "GAME_OVER"
-            and pygame.mouse.get_pressed()[0]
-            and skill_button.collidepoint(
+    if (
+    skill_buttons
+    and not skill_menu_open
+    and not random_event_open
+    and game_manager.state != "GAME_OVER"
+    and pygame.mouse.get_pressed()[0]
+):
+
+        for button, index in skill_buttons:
+
+            if button.collidepoint(
                 mouse_position
-            )
-        ):
-
-            if (
-                current_time
-                - player.last_skill_use
-                >= player.skill_cooldown
             ):
+                skill_effect = use_skill(
+                    player,
+                    enemies,
+                    items,
+                    current_time,
+                    index
+                )
 
-                skill_enemies = []
-
-                for enemy in enemies:
-
-                    if not enemy.alive:
-                        continue
-
-                    dx = (
-                        enemy.rect.centerx
-                        - player.rect.centerx
-                    )
-
-                    dy = abs(
-                        enemy.rect.centery
-                        - player.rect.centery
-                    )
-
-                    if player.facing_right:
-                        in_front = dx > 0
-                    else:
-                        in_front = dx < 0
-
-                    distance = pygame.math.Vector2(
-                        player.rect.center
-                    ).distance_to(
-                        enemy.rect.center
-                    )
-
-                    if (
-                        in_front
-                        and distance <= 180
-                        and dy <= 100
-                    ):
-                        skill_enemies.append(
-                            enemy
-                        )
-
-                if skill_enemies:
-
-                    skill_effect = SkillEffect(
-                        player.selected_skill,
-                        (
-                            player.rect.centerx
-                            + (
-                                70
-                                if player.facing_right
-                                else -70
-                            ),
-                            player.rect.centery
-                        ),
-                        player.facing_right
-                    )
-
-                    for enemy in skill_enemies:
-
-                        enemy.take_damage(
-                            player.skill_damage
-                        )
-
-                        if not enemy.alive:
-
-                            player.add_gold(
-                                int(
-                                    20
-                                    * player.gold_multiplier
-                                )
-                            )
-
-                            items.append(
-                                HeartPickup(
-                                    enemy.rect.centerx,
-                                    enemy.rect.centery
-                                )
-                            )
-
-                    player.last_skill_use = (
-                        current_time
-                    )
+                break
+            
         if skill_menu_open:
 
             skill_buttons = draw_skill_menu(
