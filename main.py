@@ -1602,12 +1602,6 @@ def main():
 
                     if skill_menu_open:
 
-                        skill_buttons = draw_skill_menu(
-                            screen,
-                            font,
-                            player
-                        )
-
                         for (
                             button,
                             name,
@@ -1637,6 +1631,9 @@ def main():
                                     )
 
                                 skill_menu_open = False
+                                break
+
+                        continue
                                 
         if game_manager.state == "EXPLORING":
 
@@ -1790,42 +1787,6 @@ def main():
             player
         )
 
-        backpack_icon_rect, backpack_buttons = draw_backpack(
-            screen,
-            font,
-            player,
-            backpack_menu_open
-        )
-
-        skill_buttons = draw_skill_buttons(
-            screen,
-            font,
-            player
-        )
-
-    if (
-    skill_buttons
-    and not skill_menu_open
-    and not random_event_open
-    and game_manager.state != "GAME_OVER"
-    and pygame.mouse.get_pressed()[0]
-):
-
-        for button, index in skill_buttons:
-
-            if button.collidepoint(
-                mouse_position
-            ):
-                skill_effect = use_skill(
-                    player,
-                    enemies,
-                    items,
-                    current_time,
-                    index
-                )
-
-                break
-            
         if skill_menu_open:
 
             skill_buttons = draw_skill_menu(
@@ -1834,55 +1795,104 @@ def main():
                 player
             )
 
-        if merchant_menu_open:
+        else:
 
-            draw_merchant_menu(
+            skill_buttons = draw_skill_buttons(
                 screen,
                 font,
-                player,
-                encounter
+                player
             )
+
+        backpack_icon_rect, backpack_buttons = draw_backpack(
+            screen,
+            font,
+            player,
+            backpack_menu_open
+        )
+
+        if not skill_menu_open:
+
+            skill_buttons = draw_skill_buttons(
+                screen,
+                font,
+                player
+            )
+
+        else:
+            skill_buttons = []
             
-        if random_event_open:
+            for button, index in skill_buttons:
 
-            draw_random_event(
-                screen,
-                font,
-                random_event_choices
-            )
+                if button.collidepoint(
+                    mouse_position
+                ):
+                    skill_effect = use_skill(
+                        player,
+                        enemies,
+                        items,
+                        current_time,
+                        index
+                    )
 
-        if (
-            map_type == "normal"
-            and map_number == 5
-            and not skill_menu_open
-            and len(player.skills) < 3
-        ):
+                    break
+                
+            if skill_menu_open:
 
-            campsite = pygame.Rect(
-                ROOM_X + 570,
-                ROOM_Y + 70,
-                190,
-                190
-            )
+                skill_buttons = draw_skill_menu(
+                    screen,
+                    font,
+                    player
+                )
 
-            if player.rect.colliderect(
-                campsite
+            if merchant_menu_open:
+
+                draw_merchant_menu(
+                    screen,
+                    font,
+                    player,
+                    encounter
+                )
+                
+            if random_event_open:
+
+                draw_random_event(
+                    screen,
+                    font,
+                    random_event_choices
+                )
+
+            if (
+                map_type == "normal"
+                and map_number == 5
+                and not skill_menu_open
+                and len(player.skills) < 3
             ):
 
-                prompt = font.render(
-                    "Press E to choose a skill",
-                    True,
-                    COLOR_TEXT
+                campsite = pygame.Rect(
+                    ROOM_X + 570,
+                    ROOM_Y + 70,
+                    190,
+                    190
                 )
 
-                screen.blit(
-                    prompt,
-                    (
-                        SCREEN_WIDTH // 2
-                        - prompt.get_width() // 2,
-                        SCREEN_HEIGHT - 35
+                if player.rect.colliderect(
+                    campsite
+                ):
+
+                    prompt = font.render(
+                        "Press E to choose a skill",
+                        True,
+                        COLOR_TEXT
                     )
-                )
+
+                    screen.blit(
+                        prompt,
+                        (
+                            SCREEN_WIDTH // 2
+                            - prompt.get_width() // 2,
+                            SCREEN_HEIGHT - 35
+                        )
+                    )
 
         if (
             game_manager.state != "GAME_OVER"
