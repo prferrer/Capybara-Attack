@@ -40,7 +40,7 @@ class Player:
         self.hit_sound = pygame.mixer.Sound("assets/audio/capyplayer/capygothit.mp3")
         
         #Volume
-        self.attack_sound.set_volume(0.6)
+        self.attack_sound.set_volume(0.4)
         self.hit_sound.set_volume(1.0)
         
         self.skills = []
