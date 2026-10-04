@@ -23,7 +23,7 @@ SKILL_COOLDOWNS = {
 
 
 class Player:
-    def __init__(self, x, y):
+    def __init__(self, x, y, weapon_type="sword"):
         self.rect = pygame.Rect(
             x,
             y,
@@ -32,10 +32,47 @@ class Player:
         )
 
         self.speed = PLAYER_SPEED
-        self.hp = 100
-        self.max_hp = 100
-        self.attack = 10
-        self.defense = 5
+
+        weapon_stats = {
+            "sword": {
+                "hp": 100,
+                "attack": 10,
+                "defense": 5,
+                "skill_slots": 3
+            },
+            "katana": {
+                "hp": 80,
+                "attack": 16,
+                "defense": 2,
+                "skill_slots": 2
+            },
+            "staff": {
+                "hp": 85,
+                "attack": 8,
+                "defense": 3,
+                "skill_slots": 5
+            },
+            "shield": {
+                "hp": 160,
+                "attack": 4,
+                "defense": 12,
+                "skill_slots": 3
+            }
+        }
+
+        self.weapon_type = weapon_type
+
+        stats = weapon_stats.get(
+            weapon_type,
+            weapon_stats["sword"]
+        )
+
+        self.hp = stats["hp"]
+        self.max_hp = stats["hp"]
+        self.attack = stats["attack"]
+        self.defense = stats["defense"]
+        self.skill_slots = stats["skill_slots"]
+
         self.gold = 0
         self.inventory = []
         self.inventory_slots = 6
@@ -55,16 +92,57 @@ class Player:
         self.skill_cooldowns = {}
         self.skill_last_uses = {}
         self.skill_cooldown_reduction = 0
+        
+        self.weapon_skill_cooldown = 0
+        self.weapon_skill_last_use = -999999
+
+        self.weapon_skill_active_until = 0
+        self.weapon_skill_visual_until = 0
+        self.weapon_skill_invulnerable = False
+        self.weapon_skill_damage_multiplier = 1.0
+        self.weapon_skill_cooldown_reduction = 0
+
+        self.barrier_active = False
+        self.lifesteal_active = False
+
+        weapon_assets = {
+            "sword": {
+                "idle": "assets/images/player/idle1.png",
+                "run": "assets/images/player/run{}.png",
+                "attack_right": "assets/images/player/attack_right{}.png",
+                "attack_left": "assets/images/player/attack_left{}.png"
+            },
+            "katana": {
+                "idle": "assets/images/player/katana_idle1.png",
+                "run": "assets/images/player/katana_running{}.png",
+                "attack": "assets/images/player/katana_attacking{}.png"
+            },
+            "staff": {
+                "idle": "assets/images/player/staff_idle1.png",
+                "run": "assets/images/player/staff_running{}.png",
+                "attack": "assets/images/player/staff_attacking{}.png"
+            },
+            "shield": {
+                "idle": "assets/images/player/shield_idle1.png",
+                "run": "assets/images/player/shield_run{}.png",
+                "attack": "assets/images/player/shield_attack{}.png"
+            }
+        }
+
+        assets = weapon_assets.get(
+            self.weapon_type,
+            weapon_assets["sword"]
+        )
 
         self.idle_image = pygame.image.load(
-            "assets/images/player/idle1.png"
+            assets["idle"]
         ).convert_alpha()
 
         self.run_images = []
 
         for i in range(1, 6):
             image = pygame.image.load(
-                f"assets/images/player/run{i}.png"
+                assets["run"].format(i)
             ).convert_alpha()
 
             self.run_images.append(image)
@@ -73,16 +151,34 @@ class Player:
         self.attack_left_images = []
 
         for i in range(1, 6):
-            right_image = pygame.image.load(
-                f"assets/images/player/attack_right{i}.png"
-            ).convert_alpha()
 
-            left_image = pygame.image.load(
-                f"assets/images/player/attack_left{i}.png"
-            ).convert_alpha()
+            if "attack_right" in assets:
+                right_image = pygame.image.load(
+                    assets["attack_right"].format(i)
+                ).convert_alpha()
 
-            self.attack_right_images.append(right_image)
-            self.attack_left_images.append(left_image)
+                left_image = pygame.image.load(
+                    assets["attack_left"].format(i)
+                ).convert_alpha()
+
+            else:
+                right_image = pygame.image.load(
+                    assets["attack"].format(i)
+                ).convert_alpha()
+
+                left_image = pygame.transform.flip(
+                    right_image,
+                    True,
+                    False
+                )
+
+            self.attack_right_images.append(
+                right_image
+            )
+
+            self.attack_left_images.append(
+                left_image
+            )
 
         self.idle_image = pygame.transform.scale(
             self.idle_image,
@@ -212,6 +308,20 @@ class Player:
         else:
             self.current_frame = 0
             self.animation_timer = 0
+            
+    def update_weapon_skill_state(self):
+        current_time = pygame.time.get_ticks()
+
+        if (
+            self.weapon_skill_active_until > 0
+            and current_time >= self.weapon_skill_active_until
+        ):
+            self.weapon_skill_active_until = 0
+            self.weapon_skill_invulnerable = False
+            self.barrier_active = False
+            self.lifesteal_active = False
+            self.weapon_skill_damage_multiplier = 1.0
+            self.weapon_skill_cooldown_reduction = 0
 
     def attack_enemy(self):
         if not self.is_attacking:
@@ -222,6 +332,7 @@ class Player:
             self.attack_sound.play()  # Play capyslay
 
     def draw(self, screen):
+        current_time = pygame.time.get_ticks()
         if self.is_attacking:
             if self.facing_right:
                 image = self.attack_right_images[
@@ -254,10 +365,76 @@ class Player:
                     False
                 )
 
-        screen.blit(image, self.rect)
+        if not self.facing_right and (
+            self.is_attacking
+            or self.is_moving
+            or not self.is_attacking
+        ):
+            pass
+
+        if self.weapon_skill_visual_until > current_time:
+
+            if self.weapon_type == "sword":
+                effect_color = (220, 45, 45)
+
+            elif self.weapon_type == "katana":
+                effect_color = (100, 220, 255)
+
+            elif self.weapon_type == "staff":
+                effect_color = (180, 80, 255)
+
+            else:
+                effect_color = (70, 150, 255)
+
+            mask = pygame.mask.from_surface(
+                image
+            )
+
+            outline = mask.outline()
+
+            if len(outline) > 2:
+                points = [
+                    (
+                        self.rect.x + point[0],
+                        self.rect.y + point[1]
+                    )
+                    for point in outline
+                ]
+
+                pygame.draw.lines(
+                    screen,
+                    effect_color,
+                    True,
+                    points,
+                    3
+                )
+
+            center = self.rect.center
+
+            pygame.draw.circle(
+                screen,
+                effect_color,
+                center,
+                PLAYER_SIZE // 2 + 8,
+                2
+            )
+
+            if self.weapon_type == "shield":
+                pygame.draw.circle(
+                    screen,
+                    (90, 180, 255),
+                    center,
+                    PLAYER_SIZE // 2 + 14,
+                    3
+                )
+
+        screen.blit(
+            image,
+            self.rect
+        )
         
     def add_skill(self, name, damage):
-            if len(self.skills) >= 3:
+            if len(self.skills) >= self.skill_slots:
                 return False
     
             if name in [skill[0] for skill in self.skills]:
@@ -289,6 +466,7 @@ class Player:
             500,
             base_cooldown
             - self.skill_cooldown_reduction
+            - self.weapon_skill_cooldown_reduction
         )
 
     def get_skill_cooldown_remaining(

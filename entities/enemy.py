@@ -186,9 +186,22 @@ class Enemy:
                     self.attack - player.defense
                 )
 
-                player.hp -= damage
-                player.hit_sound.play() #capygothit.mp3
-                self.last_attack_time = current_time
+                if player.weapon_skill_invulnerable:
+                    pass
+
+                elif player.barrier_active:
+
+                    self.take_damage(
+                        damage
+                    )
+
+                    self.last_attack_time = current_time
+
+                else:
+
+                    player.hp -= damage
+                    player.hit_sound.play()
+                    self.last_attack_time = current_time
 
         else:
             self.is_moving = False

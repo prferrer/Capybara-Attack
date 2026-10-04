@@ -157,10 +157,9 @@ def new_game(selected_weapon="sword"):
 
     player = Player(
         ROOM_X + 48,
-        ROOM_Y + 48
+        ROOM_Y + 48,
+        selected_weapon
     )
-    
-    player.weapon_type = selected_weapon
 
     encounter = create_encounter()
 
@@ -746,6 +745,263 @@ def draw_skill_buttons(
         )
 
     return buttons
+
+def draw_weapon_skill_button(
+    screen,
+    font,
+    player
+):
+    button_width = 180
+    button_height = 55
+
+    button_rect = pygame.Rect(
+        25,
+        SCREEN_HEIGHT - 80,
+        button_width,
+        button_height
+    )
+
+    current_time = pygame.time.get_ticks()
+
+    cooldown_left = max(
+        0,
+        player.weapon_skill_cooldown
+        - (
+            current_time
+            - player.weapon_skill_last_use
+        )
+    )
+
+    if cooldown_left > 0:
+
+        button_color = (
+            75,
+            75,
+            75
+        )
+
+        seconds = cooldown_left / 1000
+
+        text = font.render(
+            f"Q  WEAPON {seconds:.1f}s",
+            True,
+            COLOR_TEXT
+        )
+
+    else:
+
+        if player.weapon_type == "sword":
+            button_color = (
+                130,
+                55,
+                55
+            )
+            skill_name = "BERSERK"
+
+        elif player.weapon_type == "katana":
+            button_color = (
+                50,
+                110,
+                140
+            )
+            skill_name = "DASH"
+
+        elif player.weapon_type == "staff":
+            button_color = (
+                100,
+                60,
+                140
+            )
+            skill_name = "OVERCHARGE"
+
+        else:
+            button_color = (
+                55,
+                90,
+                150
+            )
+            skill_name = "BARRIER"
+
+        text = font.render(
+            f"Q  {skill_name}",
+            True,
+            COLOR_TEXT
+        )
+
+    pygame.draw.rect(
+        screen,
+        button_color,
+        button_rect,
+        border_radius=8
+    )
+
+    pygame.draw.rect(
+        screen,
+        (220, 200, 120),
+        button_rect,
+        2,
+        border_radius=8
+    )
+
+    screen.blit(
+        text,
+        (
+            button_rect.centerx
+            - text.get_width() // 2,
+            button_rect.centery
+            - text.get_height() // 2
+        )
+    )
+
+    return button_rect
+
+def use_weapon_skill(
+    player,
+    enemies,
+    current_time
+):
+    cooldowns = {
+        "sword": 12000,
+        "katana": 3000,
+        "staff": 7000,
+        "shield": 4500
+    }
+
+    if (
+        current_time
+        - player.weapon_skill_last_use
+        < cooldowns.get(
+            player.weapon_type,
+            12000
+        )
+    ):
+        return
+
+    player.weapon_skill_last_use = current_time
+    player.weapon_skill_cooldown = cooldowns.get(
+        player.weapon_type,
+        12000
+    )
+
+    # SWORD - BERSERK
+    if player.weapon_type == "sword":
+
+        player.weapon_skill_active_until = (
+            current_time + 8000
+        )
+
+        player.weapon_skill_visual_until = (
+            current_time + 8000
+        )
+
+        player.lifesteal_active = True
+
+        player.attack += 5
+        player.defense += 3
+
+        old_max_hp = player.max_hp
+
+        player.max_hp = min(
+            300,
+            player.max_hp + 25
+        )
+
+        player.hp = min(
+            player.max_hp,
+            player.hp + (
+                player.max_hp - old_max_hp
+            )
+        )
+
+    # KATANA - DASH
+    elif player.weapon_type == "katana":
+
+        dash_distance = 220
+
+        if player.facing_right:
+            dash_direction = 1
+        else:
+            dash_direction = -1
+
+        start_x = player.rect.centerx
+
+        player.rect.x += (
+            dash_distance
+            * dash_direction
+        )
+
+        player.rect.left = max(
+            player.rect.left,
+            ROOM_X
+        )
+
+        player.rect.right = min(
+            player.rect.right,
+            ROOM_X + 768
+        )
+
+        dash_rect = pygame.Rect(
+            min(
+                start_x,
+                player.rect.centerx
+            ),
+            player.rect.y,
+            abs(
+                player.rect.centerx
+                - start_x
+            ) + player.rect.width,
+            player.rect.height
+        )
+
+        for enemy in enemies:
+
+            if (
+                enemy.alive
+                and dash_rect.colliderect(
+                    enemy.rect
+                )
+            ):
+                enemy.take_damage(
+                    player.attack * 2
+                )
+
+        player.weapon_skill_invulnerable = True
+
+        player.weapon_skill_visual_until = (
+            current_time + 350
+        )
+
+        player.weapon_skill_active_until = (
+            current_time + 300
+        )
+
+    # STAFF - OVERCHARGE
+    elif player.weapon_type == "staff":
+
+        player.weapon_skill_active_until = (
+            current_time + 7000
+        )
+
+        player.weapon_skill_visual_until = (
+            current_time + 7000
+        )
+
+        player.weapon_skill_damage_multiplier = 1.75
+        player.weapon_skill_cooldown_reduction = 2000
+
+    # SHIELD - BARRIER
+    elif player.weapon_type == "shield":
+
+        player.weapon_skill_active_until = (
+            current_time + 5000
+        )
+
+        player.weapon_skill_visual_until = (
+            current_time + 5000
+        )
+
+        player.barrier_active = True
+
 def use_skill(
     player,
     enemies,
@@ -757,6 +1013,12 @@ def use_skill(
         return None
 
     name, damage = player.skills[skill_index]
+    
+    if player.weapon_type == "staff":
+        damage = int(
+            damage
+            * player.weapon_skill_damage_multiplier
+        )
 
     if (
         player.get_skill_cooldown_remaining(
@@ -1222,6 +1484,13 @@ def main():
     skill_menu_open = False
     skill_buttons = []
     skill_effect = None
+    
+    weapon_skill_button = pygame.Rect(
+        25,
+        SCREEN_HEIGHT - 80,
+        180,
+        55
+    )
 
     random_event_open = False
     random_event_choices = []
@@ -1265,6 +1534,20 @@ def main():
                         items,
                         pygame.time.get_ticks(),
                         skill_index
+                    )
+                
+                if (
+                    event.key == pygame.K_q
+                    and game_manager.state != "GAME_OVER"
+                    and not skill_menu_open
+                    and not merchant_menu_open
+                    and not backpack_menu_open
+                    and not random_event_open
+                ):
+                    use_weapon_skill(
+                        player,
+                        enemies,
+                        pygame.time.get_ticks()
                     )
                 
                 if (
@@ -1500,6 +1783,24 @@ def main():
                                 break
 
                         continue
+                    
+                    if (
+                        game_manager.state != "GAME_OVER"
+                        and not skill_menu_open
+                        and not merchant_menu_open
+                        and not backpack_menu_open
+                        and not random_event_open
+                        and weapon_skill_button.collidepoint(
+                            mouse_position
+                        )
+                    ):
+                        use_weapon_skill(
+                            player,
+                            enemies,
+                            pygame.time.get_ticks()
+                        )
+
+                        continue    
 
                     backpack_icon_rect = pygame.Rect(
                         10,
@@ -1653,6 +1954,8 @@ def main():
                 and not backpack_menu_open
             ):
                 player.update([])
+                
+        player.update_weapon_skill_state()
 
         current_time = pygame.time.get_ticks()
 
@@ -1690,9 +1993,27 @@ def main():
 
                     player.attack_enemy()
 
+                    damage_dealt = player.attack
+
                     enemy.take_damage(
-                        player.attack
+                        damage_dealt
                     )
+
+                    if (
+                        player.lifesteal_active
+                        and damage_dealt > 0
+                    ):
+                        lifesteal = max(
+                            1,
+                            int(
+                                damage_dealt * 0.25
+                            )
+                        )
+
+                        player.hp = min(
+                            player.max_hp,
+                            player.hp + lifesteal
+                        )
 
                     last_player_attack = current_time
 
@@ -1812,6 +2133,14 @@ def main():
                 font,
                 player
             )
+            
+        weapon_skill_button = (
+            draw_weapon_skill_button(
+                screen,
+                font,
+                player
+            )
+        )
 
         backpack_icon_rect, backpack_buttons = draw_backpack(
             screen,
@@ -1827,6 +2156,7 @@ def main():
                 font,
                 player
             )
+            
 
         else:
             skill_buttons = []
