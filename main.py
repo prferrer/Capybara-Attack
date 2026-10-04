@@ -16,8 +16,11 @@ from entities.player import Player
 from entities.enemy import Enemy
 from maps.room import Room
 from systems.game_manager import GameManager
-from systems.skill import SkillEffect
-from systems.start_screen import run_start_screen
+from systems.skill import SkillEffect, SKILL_DATA
+from systems.start_screen import (
+    run_start_screen,
+    run_character_selection
+)
 from systems.encounter import Encounter
 from systems.random_event import (
     build_random_event_choices,
@@ -139,7 +142,7 @@ NON_COMBAT_ENCOUNTERS = [
     "merchant"
 ]
 
-def new_game():
+def new_game(selected_weapon="sword"):
     game_manager = GameManager()
     game_manager.day = START_DAY
 
@@ -156,6 +159,8 @@ def new_game():
         ROOM_X + 48,
         ROOM_Y + 48
     )
+    
+    player.weapon_type = selected_weapon
 
     encounter = create_encounter()
 
@@ -672,10 +677,9 @@ def draw_skill_buttons(
         current_time = pygame.time.get_ticks()
 
         cooldown_left = (
-            player.skill_cooldown
-            - (
+            player.get_skill_cooldown_remaining(
+                name,
                 current_time
-                - player.last_skill_use
             )
         )
 
@@ -755,9 +759,10 @@ def use_skill(
     name, damage = player.skills[skill_index]
 
     if (
-        current_time
-        - player.last_skill_use
-        < player.skill_cooldown
+        player.get_skill_cooldown_remaining(
+            name,
+            current_time
+        ) > 0
     ):
         return None
 
@@ -765,6 +770,9 @@ def use_skill(
     player.skill_damage = damage
 
     skill_enemies = []
+
+    skill_range = SkillEffect.get_range(name)
+    skill_width = SkillEffect.get_width(name)
 
     for enemy in enemies:
         if not enemy.alive:
@@ -785,21 +793,14 @@ def use_skill(
         else:
             in_front = dx < 0
 
-        distance = pygame.math.Vector2(
-            player.rect.center
-        ).distance_to(
-            enemy.rect.center
-        )
+        forward_distance = abs(dx)
 
         if (
             in_front
-            and distance <= 180
-            and dy <= 100
+            and forward_distance <= skill_range
+            and dy <= skill_width
         ):
             skill_enemies.append(enemy)
-
-    if not skill_enemies:
-        return None
 
     skill_effect = SkillEffect(
         player.selected_skill,
@@ -836,7 +837,7 @@ def use_skill(
                 )
             )
 
-    player.last_skill_use = current_time
+    player.skill_last_uses[name] = current_time
 
     return skill_effect
 
@@ -1142,6 +1143,15 @@ def main():
         pygame.quit()
         return
 
+    selected_weapon = run_character_selection(
+        screen,
+        clock
+    )
+
+    if selected_weapon is None:
+        pygame.quit()
+        return
+
     pygame.mixer.music.stop()
     
     pygame.mixer.music.load("assets/audio/capyplayer/capybgmusic.mp3") #Medieval Music Vibez
@@ -1200,7 +1210,7 @@ def main():
         enemies,
         encounter,
         force_combat_next
-    ) = new_game()
+    ) = new_game(selected_weapon)
 
     items = []
 
@@ -1347,7 +1357,7 @@ def main():
                         enemies,
                         encounter,
                         force_combat_next
-                        ) = new_game()
+                        ) = new_game(selected_weapon)
 
                     items = []
 
@@ -1458,7 +1468,7 @@ def main():
                             player,
                             enemies,
                             encounter
-                        ) = new_game()
+                        ) = new_game(selected_weapon)
 
                         items = []
                         merchant_menu_open = False

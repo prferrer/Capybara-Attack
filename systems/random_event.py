@@ -591,10 +591,7 @@ def apply_effect(player, effect):
         )
 
     elif effect_type == "cooldown":
-        player.skill_cooldown = max(
-            500,
-            player.skill_cooldown + value
-        )
+        player.skill_cooldown_reduction -= value
 
     elif effect_type == "skill_damage":
         player.skill_damage = max(

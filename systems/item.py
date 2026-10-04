@@ -85,10 +85,7 @@ def give_item(player, item_type):
         player.gold_multiplier += value
 
     elif stat == "cooldown":
-        player.skill_cooldown = max(
-            500,
-            player.skill_cooldown - value
-        )
+        player.skill_cooldown_reduction += value
 
     elif stat == "skill_damage":
         player.skill_damage += value
@@ -165,7 +162,7 @@ def remove_item(player, item_type):
         )
 
     elif stat == "cooldown":
-        player.skill_cooldown += value
+        player.skill_cooldown_reduction -= value
 
     elif stat == "skill_damage":
         player.skill_damage = max(

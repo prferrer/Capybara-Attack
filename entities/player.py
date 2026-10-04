@@ -15,6 +15,12 @@ MAX_ATTACK_LIMIT = 100
 MAX_DEFENSE_LIMIT = 50
 MAX_GOLD_LIMIT = 9999
 
+SKILL_COOLDOWNS = {
+    "Fire": 3000,
+    "Ice": 4000,
+    "Lightning": 5000
+}
+
 
 class Player:
     def __init__(self, x, y):
@@ -46,8 +52,9 @@ class Player:
         self.skills = []
         self.selected_skill = None
         self.skill_damage = 0
-        self.skill_cooldown = 3000
-        self.last_skill_use = -3000
+        self.skill_cooldowns = {}
+        self.skill_last_uses = {}
+        self.skill_cooldown_reduction = 0
 
         self.idle_image = pygame.image.load(
             "assets/images/player/idle1.png"
@@ -250,19 +257,60 @@ class Player:
         screen.blit(image, self.rect)
         
     def add_skill(self, name, damage):
-        if len(self.skills) >= 3:
-            return False
+            if len(self.skills) >= 3:
+                return False
+    
+            if name in [skill[0] for skill in self.skills]:
+                return False
+    
+            self.skills.append((name, damage))
+            
+            cooldown = SKILL_COOLDOWNS.get(
+                name,
+                3000
+            )
 
-        if name in [skill[0] for skill in self.skills]:
-            return False
+            self.skill_cooldowns[name] = cooldown
+            self.skill_last_uses[name] = -cooldown
+    
+            if self.selected_skill is None:
+                self.selected_skill = name
+                self.skill_damage = damage
+    
+            return True
+        
+    def get_skill_cooldown(self, name):
+        base_cooldown = self.skill_cooldowns.get(
+            name,
+            3000
+        )
 
-        self.skills.append((name, damage))
+        return max(
+            500,
+            base_cooldown
+            - self.skill_cooldown_reduction
+        )
 
-        if self.selected_skill is None:
-            self.selected_skill = name
-            self.skill_damage = damage
+    def get_skill_cooldown_remaining(
+        self,
+        name,
+        current_time
+    ):
+        cooldown = self.get_skill_cooldown(name)
 
-        return True
+        last_use = self.skill_last_uses.get(
+            name,
+            -cooldown
+        )
+
+        return max(
+            0,
+            cooldown
+            - (
+                current_time
+                - last_use
+            )
+        )
 
     def select_skill(self, index):
         if 0 <= index < len(self.skills):
@@ -279,9 +327,29 @@ class Player:
         if name in [skill[0] for skill in self.skills]:
             return False
 
+        old_name = self.skills[index][0]
+
         self.skills[index] = (name, damage)
 
-        if self.selected_skill not in [skill[0] for skill in self.skills]:
+        self.skill_cooldowns.pop(
+            old_name,
+            None
+        )
+
+        self.skill_last_uses.pop(
+            old_name,
+            None
+        )
+
+        cooldown = SKILL_COOLDOWNS.get(
+            name,
+            3000
+        )
+
+        self.skill_cooldowns[name] = cooldown
+        self.skill_last_uses[name] = -cooldown
+
+        if self.selected_skill == old_name:
             self.select_skill(index)
 
         return True

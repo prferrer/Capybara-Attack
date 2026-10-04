@@ -1,29 +1,66 @@
 import pygame
 
+
+SKILL_DATA = {
+    "Fire": {
+        "range": 180,
+        "width": 80,
+        "size": 100
+    },
+    "Ice": {
+        "range": 120,
+        "width": 80,
+        "size": 100
+    },
+    "Lightning": {
+        "range": 200,
+        "width": 100,
+        "size": 100
+    }
+}
+
+
 class SkillEffect:
     def __init__(self, skill, position, facing_right):
         self.skill = skill
         self.facing_right = facing_right
-        
+
         if skill == "Fire":
-            skill_sound = pygame.mixer.Sound("assets/audio/skills/firesfx.mp3")
+            skill_sound = pygame.mixer.Sound(
+                "assets/audio/skills/firesfx.mp3"
+            )
         elif skill == "Ice":
-            skill_sound= pygame.mixer.Sound("assets/audio/skills/icesfx.mp3")
+            skill_sound = pygame.mixer.Sound(
+                "assets/audio/skills/icesfx.mp3"
+            )
         else:
-            skill_sound = pygame.mixer.Sound("assets/audio/skills/lightningsfx.mp3")
-            
+            skill_sound = pygame.mixer.Sound(
+                "assets/audio/skills/lightningsfx.mp3"
+            )
+
         skill_sound.set_volume(0.6)
         skill_sound.play()
 
         self.images = []
 
+        skill_size = SKILL_DATA.get(
+            skill,
+            SKILL_DATA["Fire"]
+        )["size"]
+
         for i in range(1, 6):
             if skill == "Fire":
-                filename = f"assets/images/skills/fire_right{i}.png"
+                filename = (
+                    f"assets/images/skills/fire_right{i}.png"
+                )
             elif skill == "Ice":
-                filename = f"assets/images/skills/ice{i}.png"
+                filename = (
+                    f"assets/images/skills/ice{i}.png"
+                )
             else:
-                filename = f"assets/images/skills/lightning{i}.png"
+                filename = (
+                    f"assets/images/skills/lightning{i}.png"
+                )
 
             image = pygame.image.load(
                 filename
@@ -31,7 +68,7 @@ class SkillEffect:
 
             image = pygame.transform.scale(
                 image,
-                (96, 96)
+                (skill_size, skill_size)
             )
 
             self.images.append(image)
@@ -61,7 +98,31 @@ class SkillEffect:
                 False
             )
 
-        x = self.position[0] - image.get_width() // 2
-        y = self.position[1] - image.get_height() // 2
+        x = (
+            self.position[0]
+            - image.get_width() // 2
+        )
 
-        screen.blit(image, (x, y))
+        y = (
+            self.position[1]
+            - image.get_height() // 2
+        )
+
+        screen.blit(
+            image,
+            (x, y)
+        )
+
+    @staticmethod
+    def get_range(skill):
+        return SKILL_DATA.get(
+            skill,
+            SKILL_DATA["Fire"]
+        )["range"]
+
+    @staticmethod
+    def get_width(skill):
+        return SKILL_DATA.get(
+            skill,
+            SKILL_DATA["Fire"]
+        )["width"]
