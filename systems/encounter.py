@@ -10,6 +10,39 @@ class Encounter:
         self.interacting = False
         self.finished = False
         
+        self.gold_chest_sound = None
+        self.mystery_chest_sound = None
+        
+        if encounter_type == "gold_chest":
+            self.gold_chest_sound = pygame.mixer.Sound("assets/audio/chest/goldchest.mp3")#gold_chest sound
+            self.gold_chest_sound.set_volume(0.6)
+            
+        elif encounter_type == "mystery_chest":
+            self.mystery_chest_sound = pygame.mixer.Sound("assets/audio/chest/mysterychest.mp3")#mystery_chest sound
+            self.mystery_chest_sound.set_volume(0.6)
+        
+        self.healing_fountain_sound = None
+        self.cursed_fountain_sound = None
+        
+        if encounter_type == "healing_fountain":
+            self.healing_fountain_sound = pygame.mixer.Sound("assets/audio/fountain/healing_fountain.mp3")
+            self.healing_fountain_sound.set_volume(0.6)
+            
+        elif encounter_type == "cursed_fountain":
+            self.cursed_fountain_sound = pygame.mixer.Sound("assets/audio/fountain/cursed_fountain.mp3")
+            self.cursed_fountain_sound.set_volume(0.6)
+        
+        self.capy_statue_sound = None
+        self.training_buddy_sound = None
+        
+        if encounter_type == "capy_statue":
+            self.capy_statue_sound = pygame.mixer.Sound("assets/audio/statue/capystatue.mp3")
+            self.capy_statue_sound.set_volume(0.6)
+            
+        elif encounter_type == "training_buddy":
+            self.training_buddy_sound = pygame.mixer.Sound("assets/audio/trainingbuddy/training_buddy.mp3")
+            self.training_buddy_sound.set_volume(0.6)
+        
         self.shop_items = [
             ("iron_claw", 50),
             ("iron_armor", 50),
@@ -97,9 +130,20 @@ class Encounter:
             self.frame = 1
             self.timer = 0
             self.image = self.images[self.frame]
+            
+            if self.type == "gold_chest" and self.gold_chest_sound:
+                self.gold_chest_sound.play()
+            elif self.type == "mystery_chest" and self.mystery_chest_sound:
+                self.mystery_chest_sound.play()
+            elif self.type == "capy_statue" and self.capy_statue_sound:
+                self.capy_statue_sound.play()
+                
             return
 
         if self.type == "healing_fountain":
+            if self.healing_fountain_sound:
+                self.healing_fountain_sound.play()
+                
             player.hp = min(
                 player.max_hp,
                 player.hp + int(player.max_hp * 0.35)
@@ -107,12 +151,18 @@ class Encounter:
             self.active = False
 
         elif self.type == "cursed_fountain":
+            if self.cursed_fountain_sound:
+                self.cursed_fountain_sound.play()
+                
             player.hp -= int(player.max_hp * 0.20)
             player.hp = max(player.hp, 1)
             player.add_gold(40)
             self.active = False
 
         elif self.type == "training_buddy":
+            if self.training_buddy_sound:
+                self.training_buddy_sound.play()
+                
             player.increase_attack(5)
             self.active = False
 

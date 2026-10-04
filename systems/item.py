@@ -106,6 +106,10 @@ def consume_item(player, item_type):
 
     stat = data["stat"]
     value = data["value"]
+    
+    drink_sound = pygame.mixer.Sound("assets/audio/potion/drinkpotion.mp3")
+    drink_sound.set_volume(0.6)
+    drink_sound.play()
 
     if stat == "attack_potion":
         player.increase_attack(value)
@@ -125,6 +129,10 @@ def remove_item(player, item_type):
 
     player.inventory.remove(item_type)
 
+    drop_sound = pygame.mixer.Sound("assets/audio/droppick/dropitem.mp3")
+    drop_sound.set_volume(0.8)
+    drop_sound.play()
+    
     data = ITEM_DATA[item_type]
     stat = data["stat"]
     value = data["value"]
@@ -216,6 +224,11 @@ class ItemPickup:
 
         if give_item(player, self.type):
             self.active = False
+            
+            pickup_sound = pygame.mixer.Sound("assets/audio/droppick/pickupitem.MP3")
+            pickup_sound.set_volume(0.6)
+            pickup_sound.play()
+            
             return True
 
         return False

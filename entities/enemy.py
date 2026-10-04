@@ -37,7 +37,7 @@ class Enemy:
         elif self.enemy_type == "golem":
             self.dead_sound = pygame.mixer.Sound("assets/audio/golem/golemdead.mp3") #nonchalant na bato
 
-            self.dead_sound.set_volume(1.5)
+            self.dead_sound.set_volume(1.0)
         
         elif self.enemy_type == "yeti":
             self.dead_sound = pygame.mixer.Sound("assets/audio/yeti/yetidead.mp3") #oa na sigaw
