@@ -9,6 +9,7 @@ from settings import (
     COLOR_TEXT,
     COLOR_BORDER,
 )
+from systems.settings_menu import menu as settings_menu
 
 VIDEO_PATH = "assets/videos/capybara-loading.mp4"
 
@@ -21,7 +22,6 @@ try:
     import cv2
 except ImportError:
     cv2 = None
-
 
 class LoopingVideo:
     def __init__(self, path):
@@ -205,7 +205,6 @@ class LoopingVideo:
             self.capture.release()
             self.capture = None
 
-
 def draw_text_with_shadow(
     screen,
     font,
@@ -240,80 +239,6 @@ def draw_text_with_shadow(
     )
 
     return label_rect
-
-
-def draw_tutorial(
-    screen,
-    title_font,
-    font,
-    back_rect,
-    hovering_back
-):
-    overlay = pygame.Surface(
-        (
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT
-        ),
-        pygame.SRCALPHA
-    )
-
-    overlay.fill(
-        (0, 0, 0, 190)
-    )
-
-    screen.blit(
-        overlay,
-        (0, 0)
-    )
-
-    draw_text_with_shadow(
-        screen,
-        title_font,
-        "HOW TO PLAY",
-        COLOR_TEXT,
-        (
-            SCREEN_WIDTH // 2,
-            90
-        )
-    )
-
-    lines = [
-        "W A S D / Arrow keys  -  Move your capybara",
-        "Stay close to an enemy  -  You attack automatically",
-        "E  -  Choose a skill at the campsite",
-        "Click the skill button (bottom right)  -  Cast your skill",
-        "SPACE  -  Go to the next day",
-        "",
-        "Defeat enemies to earn gold. Don't let your HP hit 0!",
-    ]
-
-    for index, line in enumerate(lines):
-        if line:
-            draw_text_with_shadow(
-                screen,
-                font,
-                line,
-                COLOR_TEXT,
-                (
-                    SCREEN_WIDTH // 2,
-                    180 + index * 50
-                )
-            )
-
-    color = (
-        (255, 235, 150)
-        if hovering_back
-        else COLOR_TEXT
-    )
-
-    draw_text_with_shadow(
-        screen,
-        font,
-        "< Back",
-        color,
-        back_rect.center
-    )
-
 
 WEAPON_OPTIONS = [
     {
@@ -374,7 +299,6 @@ WEAPON_OPTIONS = [
     },
 ]
 
-
 def draw_multiline_text(
     screen,
     font,
@@ -433,7 +357,6 @@ def wrap_text(
         lines.append(current_line)
 
     return lines
-
 
 def run_character_selection(
     screen,
@@ -955,7 +878,7 @@ def run_character_selection(
 
 def run_start_screen(screen, clock):
     """
-    Shows the looping video with Start / Tutorial buttons.
+    Shows the looping video with Start / Settings buttons.
     Returns True when the player presses Start, False if they quit.
     """
 
@@ -1007,35 +930,22 @@ def run_start_screen(screen, clock):
         center_y
     )
 
-    tutorial_center = (
+    settings_center = (
         center_x + 145,
         center_y
     )
 
-    tutorial_rect = pygame.Rect(
+    settings_rect = pygame.Rect(
         0,
         0,
         160,
         50
     )
 
-    tutorial_rect.center = (
-        tutorial_center
+    settings_rect.center = (
+        settings_center
     )
 
-    back_rect = pygame.Rect(
-        0,
-        0,
-        140,
-        50
-    )
-
-    back_rect.center = (
-        SCREEN_WIDTH // 2,
-        SCREEN_HEIGHT - 70
-    )
-
-    showing_tutorial = False
     result = False
     running = True
 
@@ -1050,10 +960,8 @@ def run_start_screen(screen, clock):
 
             elif event.type == pygame.KEYDOWN:
 
-                if showing_tutorial:
-
-                    if event.key == pygame.K_ESCAPE:
-                        showing_tutorial = False
+                if settings_menu.is_open:
+                    settings_menu.handle_event(event)
 
                 elif event.key in (
                     pygame.K_RETURN,
@@ -1068,12 +976,8 @@ def run_start_screen(screen, clock):
                 and event.button == 1
             ):
 
-                if showing_tutorial:
-
-                    if back_rect.collidepoint(
-                        mouse_position
-                    ):
-                        showing_tutorial = False
+                if settings_menu.is_open:
+                    settings_menu.handle_event(event)
 
                 elif start_rect.collidepoint(
                     mouse_position
@@ -1081,10 +985,13 @@ def run_start_screen(screen, clock):
                     result = True
                     running = False
 
-                elif tutorial_rect.collidepoint(
+                elif settings_rect.collidepoint(
                     mouse_position
                 ):
-                    showing_tutorial = True
+                    settings_menu.open()
+
+            elif settings_menu.is_open:
+                settings_menu.handle_event(event)
 
         video.update()
 
@@ -1093,90 +1000,79 @@ def run_start_screen(screen, clock):
             hint_font
         )
 
-        if showing_tutorial:
 
-            draw_tutorial(
+        hovering_start = (
+            start_rect.collidepoint(
+                mouse_position
+            )
+        )
+
+        fill = (
+            (110, 150, 90)
+            if hovering_start
+            else (80, 115, 65)
+        )
+
+        pygame.draw.rect(
+            screen,
+            fill,
+            start_rect,
+            border_radius=12
+        )
+
+        pygame.draw.rect(
+            screen,
+            COLOR_BORDER,
+            start_rect,
+            3,
+            border_radius=12
+        )
+
+        draw_text_with_shadow(
+            screen,
+            button_font,
+            "START",
+            COLOR_TEXT,
+            start_rect.center
+        )
+
+        hovering_settings = (
+            settings_rect.collidepoint(
+                mouse_position
+            )
+        )
+
+        color = (
+            (255, 235, 150)
+            if hovering_settings
+            else COLOR_TEXT
+        )
+
+        label_rect = draw_text_with_shadow(
+            screen,
+            text_font,
+            "Settings",
+            color,
+            settings_center
+        )
+
+        if hovering_settings:
+
+            pygame.draw.line(
                 screen,
-                title_font,
-                text_font,
-                back_rect,
-                back_rect.collidepoint(
-                    mouse_position
-                )
-            )
-
-        else:
-
-            hovering_start = (
-                start_rect.collidepoint(
-                    mouse_position
-                )
-            )
-
-            fill = (
-                (110, 150, 90)
-                if hovering_start
-                else (80, 115, 65)
-            )
-
-            pygame.draw.rect(
-                screen,
-                fill,
-                start_rect,
-                border_radius=12
-            )
-
-            pygame.draw.rect(
-                screen,
-                COLOR_BORDER,
-                start_rect,
-                3,
-                border_radius=12
-            )
-
-            draw_text_with_shadow(
-                screen,
-                button_font,
-                "START",
-                COLOR_TEXT,
-                start_rect.center
-            )
-
-            hovering_tutorial = (
-                tutorial_rect.collidepoint(
-                    mouse_position
-                )
-            )
-
-            color = (
-                (255, 235, 150)
-                if hovering_tutorial
-                else COLOR_TEXT
-            )
-
-            label_rect = draw_text_with_shadow(
-                screen,
-                text_font,
-                "Tutorial",
                 color,
-                tutorial_center
+                (
+                    label_rect.left,
+                    label_rect.bottom + 2
+                ),
+                (
+                    label_rect.right,
+                    label_rect.bottom + 2
+                ),
+                2
             )
 
-            if hovering_tutorial:
-
-                pygame.draw.line(
-                    screen,
-                    color,
-                    (
-                        label_rect.left,
-                        label_rect.bottom + 2
-                    ),
-                    (
-                        label_rect.right,
-                        label_rect.bottom + 2
-                    ),
-                    2
-                )
+        settings_menu.draw(screen)
 
         pygame.display.flip()
         clock.tick(FPS)
