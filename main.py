@@ -22,6 +22,7 @@ from systems.start_screen import (
     run_character_selection
 )
 from systems.backstory import run_backstory
+from systems.settings_menu import menu as settings_menu
 from systems.encounter import Encounter
 from systems.random_event import (
     build_random_event_choices,
@@ -37,7 +38,6 @@ from systems.item import (
     consume_item
 )
 
-
 def get_map_info(day):
     cycle_day = ((day - 1) % 15) + 1
 
@@ -48,7 +48,6 @@ def get_map_info(day):
         return "cave", cycle_day - 5
 
     return "snow", cycle_day - 10
-
 
 def create_enemies(map_type, day):
     if map_type == "cave":
@@ -88,7 +87,6 @@ def create_enemies(map_type, day):
         Enemy(x, y, enemy_type, day)
         for x, y in positions[:enemy_count]
     ]
-
 
 def create_encounter(exclude_type=None, force_combat=False):
     combat_encounters = [
@@ -193,7 +191,6 @@ def new_game(selected_weapon="sword"):
         force_combat_next
     )
 
-
 def get_restart_button_rect():
     button_rect = pygame.Rect(
         0,
@@ -208,7 +205,6 @@ def get_restart_button_rect():
     )
 
     return button_rect
-
 
 def draw_game_over(
     screen,
@@ -304,7 +300,6 @@ def draw_game_over(
         )
     )
 
-
 def draw_hud(screen, font, player):
     hud_text = (
         f"HP: {player.hp}/{player.max_hp}   "
@@ -324,14 +319,28 @@ def draw_hud(screen, font, player):
         (10, 10)
     )
 
+SETTINGS_ICON_RECT = pygame.Rect(10, 45, 50, 50)
+BACKPACK_ICON_RECT = pygame.Rect(10, 105, 50, 50)
+
+def draw_settings_icon(screen):
+    settings_image = pygame.image.load(
+        "assets/images/gameplay/settings.png"
+    ).convert_alpha()
+
+    settings_image = pygame.transform.scale(
+        settings_image,
+        SETTINGS_ICON_RECT.size
+    )
+
+    screen.blit(
+        settings_image,
+        SETTINGS_ICON_RECT
+    )
+
+    return SETTINGS_ICON_RECT
 
 def draw_backpack(screen, font, player, backpack_menu_open):
-    backpack_rect = pygame.Rect(
-        10,
-        45,
-        50,
-        50
-    )
+    backpack_rect = BACKPACK_ICON_RECT.copy()
 
     backpack_image = pygame.image.load(
         "assets/images/gameplay/backpack.png"
@@ -355,7 +364,7 @@ def draw_backpack(screen, font, player, backpack_menu_open):
 
     screen.blit(
         slot_text,
-        (65, 60)
+        (65, 120)
     )
 
     if not backpack_menu_open:
@@ -639,7 +648,6 @@ def draw_interaction_indicator(
                 indicator,
                 rect
             )
-
 
 def draw_skill_buttons(
     screen,
@@ -1104,7 +1112,6 @@ def use_skill(
 
     return skill_effect
 
-
 def draw_skill_menu(screen, font, player):
     overlay = pygame.Surface(
         (SCREEN_WIDTH, SCREEN_HEIGHT),
@@ -1406,8 +1413,7 @@ def main():
         pygame.quit()
         return
 
-    # Shown once, right after Start is pressed. Restarting after death
-    # calls new_game() directly and never comes back through here.
+    # Shown once, right after Start is pressed.
     if not run_backstory(
         screen,
         clock
@@ -1521,6 +1527,12 @@ def main():
 
             if event.type == pygame.QUIT:
                 running = False
+
+            if settings_menu.is_open:
+                if event.type != pygame.QUIT:
+                    settings_menu.handle_event(event)
+
+                continue
 
             if event.type == pygame.KEYDOWN:
                 
@@ -1760,7 +1772,8 @@ def main():
                             room,
                             player,
                             enemies,
-                            encounter
+                            encounter,
+                            force_combat_next
                         ) = new_game(selected_weapon)
 
                         items = []
@@ -1812,12 +1825,42 @@ def main():
 
                         continue    
 
-                    backpack_icon_rect = pygame.Rect(
-                        10,
-                        45,
-                        50,
-                        50
-                    )
+                    if (
+                        game_manager.state != "GAME_OVER"
+                        and not skill_menu_open
+                        and not merchant_menu_open
+                        and not backpack_menu_open
+                        and not random_event_open
+                    ):
+                        clicked_skill = None
+
+                        for button, index in skill_buttons:
+                            if button.collidepoint(mouse_position):
+                                clicked_skill = index
+                                break
+
+                        if clicked_skill is not None:
+                            skill_effect = use_skill(
+                                player,
+                                enemies,
+                                items,
+                                pygame.time.get_ticks(),
+                                clicked_skill
+                            )
+
+                            continue
+
+                    if (
+                        game_manager.state != "GAME_OVER"
+                        and not skill_menu_open
+                        and not merchant_menu_open
+                        and not backpack_menu_open
+                        and SETTINGS_ICON_RECT.collidepoint(mouse_position)
+                    ):
+                        settings_menu.open(pause_game=True)
+                        continue
+
+                    backpack_icon_rect = BACKPACK_ICON_RECT
 
                     if (
                         not backpack_menu_open
@@ -1962,10 +2005,13 @@ def main():
                 not skill_menu_open
                 and not merchant_menu_open
                 and not backpack_menu_open
+                and not random_event_open
+                and not settings_menu.is_open
             ):
                 player.update([])
                 
-        player.update_weapon_skill_state()
+        if not settings_menu.is_open:
+            player.update_weapon_skill_state()
 
         current_time = pygame.time.get_ticks()
 
@@ -1973,6 +2019,8 @@ def main():
             not skill_menu_open
             and not merchant_menu_open
             and not backpack_menu_open
+            and not random_event_open
+            and not settings_menu.is_open
             and game_manager.state != "GAME_OVER"
         ):
 
@@ -2054,7 +2102,7 @@ def main():
             if item.active
         ]
 
-        if skill_effect:
+        if skill_effect and not settings_menu.is_open:
 
             skill_effect.update()
 
@@ -2074,12 +2122,13 @@ def main():
                 screen
             )
 
-        encounter.update()
+        if not settings_menu.is_open:
+            encounter.update()
 
-        encounter.complete_reward(
-            player,
-            items
-        )
+            encounter.complete_reward(
+                player,
+                items
+            )
         encounter.draw(
             screen
         )
@@ -2090,10 +2139,12 @@ def main():
                 item,
                 HeartPickup
             ):
-                item.update()
+                if not settings_menu.is_open:
+                    item.update()
 
                 if (
-                    item.active
+                    not settings_menu.is_open
+                    and item.active
                     and player.rect.colliderect(
                         item.rect
                     )
@@ -2152,6 +2203,8 @@ def main():
             )
         )
 
+        draw_settings_icon(screen)
+
         backpack_icon_rect, backpack_buttons = draw_backpack(
             screen,
             font,
@@ -2169,80 +2222,61 @@ def main():
             
 
         else:
-            skill_buttons = []
-            
-            for button, index in skill_buttons:
+            skill_buttons = draw_skill_menu(
+                screen,
+                font,
+                player
+            )
 
-                if button.collidepoint(
-                    mouse_position
-                ):
-                    skill_effect = use_skill(
-                        player,
-                        enemies,
-                        items,
-                        current_time,
-                        index
-                    )
+        if merchant_menu_open:
 
-                    break
-                
-            if skill_menu_open:
+            draw_merchant_menu(
+                screen,
+                font,
+                player,
+                encounter
+            )
 
-                skill_buttons = draw_skill_menu(
-                    screen,
-                    font,
-                    player
-                )
+        if random_event_open:
 
-            if merchant_menu_open:
+            draw_random_event(
+                screen,
+                font,
+                random_event_choices
+            )
 
-                draw_merchant_menu(
-                    screen,
-                    font,
-                    player,
-                    encounter
-                )
-                
-            if random_event_open:
+        if (
+            map_type == "normal"
+            and map_number == 5
+            and not skill_menu_open
+            and len(player.skills) < 3
+        ):
 
-                draw_random_event(
-                    screen,
-                    font,
-                    random_event_choices
-                )
+            campsite = pygame.Rect(
+                ROOM_X + 570,
+                ROOM_Y + 70,
+                190,
+                190
+            )
 
-            if (
-                map_type == "normal"
-                and map_number == 5
-                and not skill_menu_open
-                and len(player.skills) < 3
+            if player.rect.colliderect(
+                campsite
             ):
 
-                campsite = pygame.Rect(
-                    ROOM_X + 570,
-                    ROOM_Y + 70,
-                    190,
-                    190
+                prompt = font.render(
+                    "Press E to choose a skill",
+                    True,
+                    COLOR_TEXT
                 )
 
-                if player.rect.colliderect(
-                    campsite
-                ):
-
-                    prompt = font.render(
-                        "Press E to choose a skill",
-                        True,
-                        COLOR_TEXT
+                screen.blit(
+                    prompt,
+                    (
+                        SCREEN_WIDTH // 2
+                        - prompt.get_width() // 2,
+                        SCREEN_HEIGHT - 135
                     )
-
-                    screen.blit(
-                        prompt,
-                        (
-                            SCREEN_WIDTH // 2
-                            - prompt.get_width() // 2,
-                            SCREEN_HEIGHT - 35
-                        )
-                    )
+                )
 
         if (
             game_manager.state != "GAME_OVER"
@@ -2270,13 +2304,29 @@ def main():
 
             if next_day_text:
 
+                next_day_pos = (
+                    SCREEN_WIDTH // 2
+                    - next_day_text.get_width() // 2,
+                    SCREEN_HEIGHT - 105
+                )
+
+                backing = pygame.Surface(
+                    (
+                        next_day_text.get_width() + 20,
+                        next_day_text.get_height() + 8
+                    ),
+                    pygame.SRCALPHA
+                )
+                backing.fill((0, 0, 0, 150))
+
+                screen.blit(
+                    backing,
+                    (next_day_pos[0] - 10, next_day_pos[1] - 4)
+                )
+
                 screen.blit(
                     next_day_text,
-                    (
-                        SCREEN_WIDTH // 2
-                        - next_day_text.get_width() // 2,
-                        SCREEN_HEIGHT - 62
-                    )
+                    next_day_pos
                 )
 
         if game_manager.state == "GAME_OVER":
@@ -2287,6 +2337,8 @@ def main():
                 button_font,
                 mouse_position
             )
+
+        settings_menu.draw(screen)
 
         pygame.display.flip()
 
