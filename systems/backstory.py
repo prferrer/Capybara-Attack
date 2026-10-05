@@ -17,10 +17,6 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 BACKSTORY_DIR = "assets/images/backstory"
 
-# The 5 grid panels, in the position they sit on the original comic page
-# (x, y, width, height), measured in the original page's own pixels -
-# the page itself is GRID_PANEL_SIZE below. They build up in this order,
-# each appearing in its own spot, like the comic page assembling itself.
 GRID_PANEL_SIZE = (1532, 849)
 
 GRID_PANELS = [
@@ -31,28 +27,13 @@ GRID_PANELS = [
     ("panel_05.png", (838, 419, 694, 430)),
 ]
 
-# Shown full-screen by itself once the comic page has finished building.
 FINAL_PANEL_FILE = "panel_06.png"
-
-# Pause before the first grid panel appears, in milliseconds.
 INTRO_PAUSE_MS = 500
-
-# Time between one grid panel appearing and the next one starting.
 GRID_PANEL_INTERVAL_MS = 1100
-
-# How long a panel takes to fade in.
 FADE_MS = 300
-
-# Pause on the completed comic page before cutting to the final panel.
 PAGE_HOLD_MS = 1000
-
-# Pause on the final panel before the objective popup fades in.
 OBJECTIVE_PAUSE_MS = 1000
-
-# How long the objective popup takes to fade in.
 OBJECTIVE_FADE_MS = 400
-
-# "Press to continue" hint, shown once everything is fully visible.
 HINT_TEXT = "Click or press any key to continue"
 
 OBJECTIVE_TITLE_LINES = [
@@ -93,11 +74,6 @@ def _load_image(file_name):
 
 
 def _build_grid(missing):
-    """
-    Loads the 5 grid panels and scales/positions each one as it would sit
-    on the full comic page once that page is scaled to fit the screen.
-    Returns a list of (scaled_surface, rect_on_screen), in build order.
-    """
     page_width, page_height, scale = _fit_rect(
         GRID_PANEL_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT
     )
@@ -160,11 +136,6 @@ def _draw_faded(screen, surface, rect, alpha):
 
 
 def _render_objective_popup():
-    """
-    Draws the dim overlay, popup box and objective text onto one
-    transparent surface, so the whole thing can fade in as a unit with
-    a single set_alpha() call instead of fading each piece separately.
-    """
     title_font = pygame.font.Font(None, 34)
     title_font.set_bold(True)
 
@@ -265,14 +236,6 @@ def _show_missing_message(screen, clock, missing):
 
 
 def run_backstory(screen, clock):
-    """
-    Builds the 5-panel comic page one panel at a time, in place, then
-    cuts to the final full-screen panel. Only meant to be called once,
-    right after Start is pressed - never on restart/death.
-
-    Returns True normally, False if the player closed the window
-    (so main() can quit cleanly instead of continuing into the game).
-    """
     missing = []
 
     grid_panels = _build_grid(missing)
