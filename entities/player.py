@@ -78,13 +78,36 @@ class Player:
         self.inventory_slots = 6
         self.gold_multiplier = 1.0
         
-        #Added attack sound effect for the player
-        self.attack_sound = pygame.mixer.Sound("assets/audio/capyplayer/capyslay.mp3")
+        #all 4 characters
         self.hit_sound = pygame.mixer.Sound("assets/audio/capyplayer/capygothit.mp3")
-        
-        #Volume
-        self.attack_sound.set_volume(0.4)
         self.hit_sound.set_volume(1.0)
+        
+        self.attack_sound = None
+        self.weapon_skill_sound = None
+        
+        if self.weapon_type == "sword":
+            self.attack_sound = pygame.mixer.Sound("assets/audio/capyplayer/sword/capyslay.mp3")
+            self.weapon_skill_sound = pygame.mixer.Sound("assets/audio/capyplayer/sword/berserksfx.mp3")
+            
+        elif self.weapon_type == "katana":
+            self.attack_sound = pygame.mixer.Sound("assets/audio/capyplayer/katana/katanaslashsfx.mp3")
+            self.weapon_skill_sound = pygame.mixer.Sound("assets/audio/capyplayer/katana/dashsfx.mp3")
+            
+        elif self.weapon_type == "staff":
+            self.attack_sound = pygame.mixer.Sound("assets/audio/capyplayer/staff/staffattack.MP3")
+            self.weapon_skill_sound = pygame.mixer.Sound("assets/audio/capyplayer/staff/overchargesfx.MP3")
+            
+        elif self.weapon_type == "shield":
+            self.attack_sound = pygame.mixer.Sound("assets/audio/capyplayer/shield/shieldbash.MP3")
+            self.weapon_skill_sound = pygame.mixer.Sound("assets/audio/capyplayer/shield/barriersfx.MP3")
+            
+        # Set volumes safely
+        if self.attack_sound:
+            self.attack_sound.set_volume(0.6)
+            
+        if self.weapon_skill_sound:
+            self.weapon_skill_sound.set_volume(0.6)
+        
         
         self.skills = []
         self.selected_skill = None

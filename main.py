@@ -894,6 +894,9 @@ def use_weapon_skill(
 
     # SWORD - BERSERK
     if player.weapon_type == "sword":
+        
+        if player.weapon_skill_sound:
+            player.weapon_skill_sound.play()
 
         player.weapon_skill_active_until = (
             current_time + 8000
@@ -924,6 +927,9 @@ def use_weapon_skill(
 
     # KATANA - DASH
     elif player.weapon_type == "katana":
+        
+        if player.weapon_skill_sound:
+            player.weapon_skill_sound.play()
 
         dash_distance = 220
 
@@ -986,6 +992,9 @@ def use_weapon_skill(
 
     # STAFF - OVERCHARGE
     elif player.weapon_type == "staff":
+        
+        if player.weapon_skill_sound:
+            player.weapon_skill_sound.play()
 
         player.weapon_skill_active_until = (
             current_time + 7000
@@ -1000,6 +1009,9 @@ def use_weapon_skill(
 
     # SHIELD - BARRIER
     elif player.weapon_type == "shield":
+        
+        if player.weapon_skill_sound:
+            player.weapon_skill_sound.play()
 
         player.weapon_skill_active_until = (
             current_time + 5000
