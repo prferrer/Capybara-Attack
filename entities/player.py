@@ -18,7 +18,14 @@ MAX_GOLD_LIMIT = 9999
 SKILL_COOLDOWNS = {
     "Fire": 3000,
     "Ice": 4000,
-    "Lightning": 5000
+    "Lightning": 5000,
+    "Light": 4000,
+    "Dark": 5000,
+    "Water": 3500,
+    "Wind": 3000,
+    "Earth": 5000,
+    "Poison": 3500,
+    "Explosion": 6000
 }
 
 

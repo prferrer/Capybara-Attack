@@ -1090,9 +1090,9 @@ def use_skill(
         (
             player.rect.centerx
             + (
-                70
+                SKILL_DATA[name]["range"] // 2
                 if player.facing_right
-                else -70
+                else -SKILL_DATA[name]["range"] // 2
             ),
             player.rect.centery
         ),
@@ -1124,7 +1124,12 @@ def use_skill(
 
     return skill_effect
 
-def draw_skill_menu(screen, font, player):
+def draw_skill_menu(
+    screen,
+    font,
+    player,
+    skill_choices
+    ):
     overlay = pygame.Surface(
         (SCREEN_WIDTH, SCREEN_HEIGHT),
         pygame.SRCALPHA
@@ -1148,28 +1153,22 @@ def draw_skill_menu(screen, font, player):
         )
     )
 
-    skills = [
-        ("Fire", 35),
-        ("Ice", 25),
-        ("Lightning", 45)
-    ]
-
     buttons = []
 
     if len(player.skills) < 3:
 
-        for name, damage in skills:
+        for index, (name, damage) in enumerate(
+            skill_choices
+        ):
 
-            if name in [skill[0] for skill in player.skills]:
-                continue
-
-            index = len(buttons)
+            column = index % 2
+            row = index // 2
 
             button_rect = pygame.Rect(
-                SCREEN_WIDTH // 2 - 150,
-                180 + index * 100,
-                300,
-                70
+                80 + column * 280,
+                170 + row * 80,
+                250,
+                60
             )
 
             pygame.draw.rect(
@@ -1512,6 +1511,7 @@ def main():
     skill_menu_open = False
     skill_buttons = []
     skill_effect = None
+    skill_choices = []
     
     weapon_skill_button = pygame.Rect(
         25,
@@ -1597,6 +1597,53 @@ def main():
                     and game_manager.state != "GAME_OVER"
                     and not random_event_open
                 ):
+                    
+                    if (
+                        map_type == "normal"
+                        and map_number == 5
+                        and len(player.skills) < player.skill_slots
+                    ):
+
+                        campsite = pygame.Rect(
+                            ROOM_X + 570,
+                            ROOM_Y + 70,
+                            190,
+                            190
+                        )
+
+                        if player.rect.colliderect(campsite):
+
+                            all_skills = [
+                                ("Fire", 35),
+                                ("Ice", 25),
+                                ("Lightning", 45),
+                                ("Light", 40),
+                                ("Dark", 50),
+                                ("Water", 30),
+                                ("Wind", 30),
+                                ("Earth", 55),
+                                ("Poison", 30),
+                                ("Explosion", 60)
+                            ]
+
+                            owned_skills = [
+                                skill[0]
+                                for skill in player.skills
+                            ]
+
+                            available_skills = [
+                                skill
+                                for skill in all_skills
+                                if skill[0] not in owned_skills
+                            ]
+
+                            skill_choices = random.sample(
+                                available_skills,
+                                min(5, len(available_skills))
+                            )
+
+                            skill_menu_open = True
+                            continue
 
                     for item in items:
 
@@ -1639,23 +1686,18 @@ def main():
                                 player
                             )
 
-                    if (
-                        map_type == "normal"
-                        and map_number == 5
-                        and len(player.skills) < 3
-                    ):
+                if (
+                    map_type == "normal"
+                    and map_number == 5
+                    and len(player.skills) < player.skill_slots
+                ):
 
-                        campsite = pygame.Rect(
-                            ROOM_X + 570,
-                            ROOM_Y + 70,
-                            190,
-                            190
-                        )
-
-                        if player.rect.colliderect(
-                            campsite
-                        ):
-                            skill_menu_open = True
+                    campsite = pygame.Rect(
+                        ROOM_X + 570,
+                        ROOM_Y + 70,
+                        190,
+                        190
+                    )
 
                 if (
                     game_manager.state == "GAME_OVER"
@@ -2196,7 +2238,8 @@ def main():
             skill_buttons = draw_skill_menu(
                 screen,
                 font,
-                player
+                player,
+                skill_choices
             )
 
         else:
@@ -2224,22 +2267,6 @@ def main():
             backpack_menu_open
         )
 
-        if not skill_menu_open:
-
-            skill_buttons = draw_skill_buttons(
-                screen,
-                font,
-                player
-            )
-            
-
-        else:
-            skill_buttons = draw_skill_menu(
-                screen,
-                font,
-                player
-            )
-
         if merchant_menu_open:
 
             draw_merchant_menu(
@@ -2261,7 +2288,7 @@ def main():
             map_type == "normal"
             and map_number == 5
             and not skill_menu_open
-            and len(player.skills) < 3
+            and len(player.skills) < player.skill_slots
         ):
 
             campsite = pygame.Rect(

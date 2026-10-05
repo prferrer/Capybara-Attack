@@ -59,6 +59,8 @@ class SkillEffect:
         self.skill = skill
         self.facing_right = facing_right
 
+        skill_sound = None
+
         if skill == "Fire":
             skill_sound = pygame.mixer.Sound(
                 "assets/audio/skills/firesfx.mp3"
@@ -67,13 +69,14 @@ class SkillEffect:
             skill_sound = pygame.mixer.Sound(
                 "assets/audio/skills/icesfx.mp3"
             )
-        else:
+        elif skill == "Lightning":
             skill_sound = pygame.mixer.Sound(
                 "assets/audio/skills/lightningsfx.mp3"
             )
 
-        skill_sound.set_volume(0.6)
-        skill_sound.play()
+        if skill_sound:
+            skill_sound.set_volume(0.6)
+            skill_sound.play()
 
         self.images = []
 
@@ -82,7 +85,14 @@ class SkillEffect:
             SKILL_DATA["Fire"]
         )["size"]
 
-        for i in range(1, 6):
+        frame_count = 5 if skill in (
+            "Fire",
+            "Ice",
+            "Lightning"
+        ) else 6
+
+        for i in range(1, frame_count + 1):
+
             if skill == "Fire":
                 filename = (
                     f"assets/images/skills/fire_right{i}.png"
@@ -91,9 +101,13 @@ class SkillEffect:
                 filename = (
                     f"assets/images/skills/ice{i}.png"
                 )
-            else:
+            elif skill == "Lightning":
                 filename = (
                     f"assets/images/skills/lightning{i}.png"
+                )
+            else:
+                filename = (
+                    f"assets/images/skills/{skill.lower()}{i}.png"
                 )
 
             image = pygame.image.load(
@@ -119,13 +133,16 @@ class SkillEffect:
             self.timer = 0
             self.frame += 1
 
-            if self.frame >= 5:
+            if self.frame >= len(self.images):
                 self.finished = True
 
     def draw(self, screen):
+        if self.frame >= len(self.images):
+            return
+
         image = self.images[self.frame]
 
-        if self.skill == "Fire" and not self.facing_right:
+        if not self.facing_right:
             image = pygame.transform.flip(
                 image,
                 True,
