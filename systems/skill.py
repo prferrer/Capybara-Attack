@@ -16,9 +16,43 @@ SKILL_DATA = {
         "range": 200,
         "width": 100,
         "size": 100
+    },
+    "Light": {
+        "range": 190,
+        "width": 100,
+        "size": 110
+    },
+    "Dark": {
+        "range": 170,
+        "width": 110,
+        "size": 120
+    },
+    "Water": {
+        "range": 200,
+        "width": 120,
+        "size": 120
+    },
+    "Wind": {
+        "range": 220,
+        "width": 100,
+        "size": 110
+    },
+    "Earth": {
+        "range": 150,
+        "width": 120,
+        "size": 125
+    },
+    "Poison": {
+        "range": 175,
+        "width": 100,
+        "size": 105
+    },
+    "Explosion": {
+        "range": 150,
+        "width": 140,
+        "size": 140
     }
 }
-
 
 class SkillEffect:
     def __init__(self, skill, position, facing_right):
