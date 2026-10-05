@@ -21,6 +21,7 @@ from systems.start_screen import (
     run_start_screen,
     run_character_selection
 )
+from systems.backstory import run_backstory
 from systems.encounter import Encounter
 from systems.random_event import (
     build_random_event_choices,
@@ -1399,6 +1400,15 @@ def main():
     clock = pygame.time.Clock()
 
     if not run_start_screen(
+        screen,
+        clock
+    ):
+        pygame.quit()
+        return
+
+    # Shown once, right after Start is pressed. Restarting after death
+    # calls new_game() directly and never comes back through here.
+    if not run_backstory(
         screen,
         clock
     ):
