@@ -321,6 +321,39 @@ def draw_game_over(
         )
     )
 
+def draw_victory(
+    screen,
+    big_font,
+    button_font,
+    mouse_position
+):
+    overlay = pygame.Surface(
+        (SCREEN_WIDTH, SCREEN_HEIGHT),
+        pygame.SRCALPHA
+    )
+    overlay.fill((0, 0, 0, 190))
+    screen.blit(overlay, (0, 0))
+
+    title = big_font.render("VICTORY!", True, (255, 215, 0))
+    title_shadow = big_font.render("VICTORY!", True, (0, 0, 0))
+    title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 230))
+
+    screen.blit(title_shadow, title_rect.move(4, 4))
+    screen.blit(title, title_rect)
+
+    button_rect = get_restart_button_rect()
+
+    if button_rect.collidepoint(mouse_position):
+        button_color = (110, 150, 90)
+    else:
+        button_color = (80, 115, 65)
+
+    pygame.draw.rect(screen, button_color, button_rect, border_radius=12)
+    pygame.draw.rect(screen, (220, 200, 120), button_rect, 3, border_radius=12)
+
+    label = button_font.render("PLAY AGAIN", True, COLOR_TEXT)
+    screen.blit(label, label.get_rect(center=button_rect.center))
+
 def draw_hud(screen, font, player):
     hud_text = (
         f"HP: {player.hp}/{player.max_hp}   "
@@ -1535,6 +1568,9 @@ def main():
     
     random_event_sound = pygame.mixer.Sound("assets/audio/misc/randomitem.mp3")
     random_event_sound.set_volume(0.8)
+    
+    victory_sound = pygame.mixer.Sound("assets/audio/victorysfx.mp3")
+    victory_sound.set_volume(0.8)
 
     font = pygame.font.Font(
         None,
@@ -1899,7 +1935,7 @@ def main():
 
                 elif (
                     event.key == pygame.K_SPACE
-                    and game_manager.state != "GAME_OVER"
+                    and game_manager.state not in ("GAME_OVER", "VICTORY")
                 ):
 
                     if (
@@ -1908,6 +1944,12 @@ def main():
                         and not backpack_menu_open
                         and not random_event_open
                     ):
+                        
+                        if game_manager.day >= 25:
+                            game_manager.state = "VICTORY"
+                            pygame.mixer.music.stop()
+                            victory_sound.play()
+                            continue
 
                         game_manager.next_day()
 
@@ -1972,7 +2014,7 @@ def main():
 
                 if (
                     event.button == 1
-                    and game_manager.state == "GAME_OVER"
+                    and game_manager.state in ("GAME_OVER", "VICTORY")
                 ):
 
                     if get_restart_button_rect().collidepoint(
@@ -2547,6 +2589,15 @@ def main():
         if game_manager.state == "GAME_OVER":
 
             draw_game_over(
+                screen,
+                big_font,
+                button_font,
+                mouse_position
+            )
+            
+        elif game_manager.state == "VICTORY":
+            
+            draw_victory(
                 screen,
                 big_font,
                 button_font,
