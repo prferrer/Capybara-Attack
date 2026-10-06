@@ -14,33 +14,33 @@ class Encounter:
         self.mystery_chest_sound = None
         
         if encounter_type == "gold_chest":
-            self.gold_chest_sound = pygame.mixer.Sound("assets/audio/chest/goldchest.mp3")#gold_chest sound
+            self.gold_chest_sound = pygame.mixer.Sound("assets/audio/misc/chest/goldchest.mp3")#gold_chest sound
             self.gold_chest_sound.set_volume(0.6)
             
         elif encounter_type == "mystery_chest":
-            self.mystery_chest_sound = pygame.mixer.Sound("assets/audio/chest/mysterychest.mp3")#mystery_chest sound
+            self.mystery_chest_sound = pygame.mixer.Sound("assets/audio/misc/chest/mysterychest.mp3")#mystery_chest sound
             self.mystery_chest_sound.set_volume(0.6)
         
         self.healing_fountain_sound = None
         self.cursed_fountain_sound = None
         
         if encounter_type == "healing_fountain":
-            self.healing_fountain_sound = pygame.mixer.Sound("assets/audio/fountain/healing_fountain.mp3")
+            self.healing_fountain_sound = pygame.mixer.Sound("assets/audio/misc/fountain/healing_fountain.mp3")
             self.healing_fountain_sound.set_volume(0.6)
             
         elif encounter_type == "cursed_fountain":
-            self.cursed_fountain_sound = pygame.mixer.Sound("assets/audio/fountain/cursed_fountain.mp3")
+            self.cursed_fountain_sound = pygame.mixer.Sound("assets/audio/misc/fountain/cursed_fountain.mp3")
             self.cursed_fountain_sound.set_volume(0.6)
         
         self.capy_statue_sound = None
         self.training_buddy_sound = None
         
         if encounter_type == "capy_statue":
-            self.capy_statue_sound = pygame.mixer.Sound("assets/audio/statue/capystatue.mp3")
+            self.capy_statue_sound = pygame.mixer.Sound("assets/audio/misc/statue/capystatue.mp3")
             self.capy_statue_sound.set_volume(0.6)
             
         elif encounter_type == "training_buddy":
-            self.training_buddy_sound = pygame.mixer.Sound("assets/audio/trainingbuddy/training_buddy.mp3")
+            self.training_buddy_sound = pygame.mixer.Sound("assets/audio/misc/trainingbuddy/training_buddy.mp3")
             self.training_buddy_sound.set_volume(0.6)
         
         self.shop_items = [

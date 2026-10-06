@@ -62,20 +62,28 @@ class SkillEffect:
         skill_sound = None
 
         if skill == "Fire":
-            skill_sound = pygame.mixer.Sound(
-                "assets/audio/skills/firesfx.mp3"
-            )
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/firesfx.mp3")
         elif skill == "Ice":
-            skill_sound = pygame.mixer.Sound(
-                "assets/audio/skills/icesfx.mp3"
-            )
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/icesfx.mp3")
         elif skill == "Lightning":
-            skill_sound = pygame.mixer.Sound(
-                "assets/audio/skills/lightningsfx.mp3"
-            )
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/lightningsfx.mp3")
+        elif skill == "Light":
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/lightsfx.mp3")
+        elif skill == "Dark":
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/darksfx.mp3")
+        elif skill == "Water":
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/watersfx.mp3")
+        elif skill == "Wind":
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/windsfx.mp3")
+        elif skill == "Earth":
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/earthsfx.mp3")
+        elif skill == "Poison":
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/poisonsfx.mp3")
+        elif skill == "Explosion":
+            skill_sound = pygame.mixer.Sound("assets/audio/skills/explosionsfx.mp3")
 
         if skill_sound:
-            skill_sound.set_volume(0.6)
+            skill_sound.set_volume(0.7)
             skill_sound.play()
 
         self.images = []

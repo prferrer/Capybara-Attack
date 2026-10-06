@@ -30,17 +30,17 @@ class Enemy:
         self.dead_sound = None
         
         if self.enemy_type == "orc":
-            self.dead_sound = pygame.mixer.Sound("assets/audio/orc/orcdead.mp3") #boses orc
+            self.dead_sound = pygame.mixer.Sound("assets/audio/enemies/orc/orcdead.mp3") #boses orc
             
             self.dead_sound.set_volume(0.8)
         
         elif self.enemy_type == "golem":
-            self.dead_sound = pygame.mixer.Sound("assets/audio/golem/golemdead.mp3") #nonchalant na bato
+            self.dead_sound = pygame.mixer.Sound("assets/audio/enemies/golem/golemdead.mp3") #nonchalant na bato
 
             self.dead_sound.set_volume(1.0)
         
         elif self.enemy_type == "yeti":
-            self.dead_sound = pygame.mixer.Sound("assets/audio/yeti/yetidead.mp3") #oa na sigaw
+            self.dead_sound = pygame.mixer.Sound("assets/audio/enemies/yeti/yetidead.mp3") #oa na sigaw
 
             self.dead_sound.set_volume(0.9)
 

@@ -1400,8 +1400,8 @@ def main():
     pygame.init()
     pygame.mixer.init()
 
-    pygame.mixer.music.load("assets/audio/capyplayer/capyloadscreenmusic.mp3")
-    pygame.mixer.music.set_volume(0.3)
+    pygame.mixer.music.load("assets/audio/capyloadscreenmusic.mp3")
+    pygame.mixer.music.set_volume(0.6)
     pygame.mixer.music.play(-1)
     
     screen = pygame.display.set_mode(
@@ -1443,36 +1443,36 @@ def main():
 
     pygame.mixer.music.stop()
     
-    pygame.mixer.music.load("assets/audio/capyplayer/capybgmusic.mp3") #Medieval Music Vibez
-    pygame.mixer.music.set_volume(0.05)
+    pygame.mixer.music.load("assets/audio/capybgmusic.mp3") #Medieval Music Vibez
+    pygame.mixer.music.set_volume(0.2)
     pygame.mixer.music.play(-1)
     
         #Hello Merchant sounds for the merchant encounter
     merchant_sounds = [
-        pygame.mixer.Sound("assets/audio/merchant/welcome1.MP3"),
-        pygame.mixer.Sound("assets/audio/merchant/welcome2.MP3"),
-        pygame.mixer.Sound("assets/audio/merchant/welcome3.MP3")
+        pygame.mixer.Sound("assets/audio/misc/merchant/welcome1.MP3"),
+        pygame.mixer.Sound("assets/audio/misc/merchant/welcome2.MP3"),
+        pygame.mixer.Sound("assets/audio/misc/merchant/welcome3.MP3")
     ]
     
     #Walang pera
     merchant_broke_sounds = [
-        pygame.mixer.Sound("assets/audio/merchant/broke1.MP3"),
-        pygame.mixer.Sound("assets/audio/merchant/broke2.MP3"),
-        pygame.mixer.Sound("assets/audio/merchant/broke3.MP3")
+        pygame.mixer.Sound("assets/audio/misc/merchant/broke1.MP3"),
+        pygame.mixer.Sound("assets/audio/misc/merchant/broke2.MP3"),
+        pygame.mixer.Sound("assets/audio/misc/merchant/broke3.MP3")
     ]
     
     #May pera at pangarap sa buhay
     merchant_purchase_sounds = [
-        pygame.mixer.Sound("assets/audio/merchant/purchased1.MP3"),
-        pygame.mixer.Sound("assets/audio/merchant/purchased2.MP3"),
-        pygame.mixer.Sound("assets/audio/merchant/purchased3.MP3")
+        pygame.mixer.Sound("assets/audio/misc/merchant/purchased1.MP3"),
+        pygame.mixer.Sound("assets/audio/misc/merchant/purchased2.MP3"),
+        pygame.mixer.Sound("assets/audio/misc/merchant/purchased3.MP3")
     ]
     
     # byeee
     merchant_exit_sounds = [
-        pygame.mixer.Sound("assets/audio/merchant/exit1.MP3"),
-        pygame.mixer.Sound("assets/audio/merchant/exit2.MP3"),
-        pygame.mixer.Sound("assets/audio/merchant/exit3.MP3")
+        pygame.mixer.Sound("assets/audio/misc/merchant/exit1.MP3"),
+        pygame.mixer.Sound("assets/audio/misc/merchant/exit2.MP3"),
+        pygame.mixer.Sound("assets/audio/misc/merchant/exit3.MP3")
     ]
 
     font = pygame.font.Font(
@@ -1725,7 +1725,9 @@ def main():
                     skill_effect = None
                     random_event_open = False
                     random_event_choices = []
-
+                    
+                    pygame.mixer.music.play(-1)
+                    
                 elif (
                     event.key == pygame.K_SPACE
                     and game_manager.state != "GAME_OVER"
@@ -1838,6 +1840,8 @@ def main():
                         skill_effect = None
                         random_event_open = False
                         random_event_choices = []
+                        
+                        pygame.mixer.music.play(-1)
 
                 elif event.button == 1:
 
@@ -2083,6 +2087,14 @@ def main():
 
             if player.hp <= 0:
                 player.hp = 0
+                
+                if game_manager.state != "GAME_OVER":
+                    pygame.mixer.music.stop()
+
+                    game_over_sound = pygame.mixer.Sound("assets/audio/gameoversfx.mp3") 
+                    game_over_sound.set_volume(0.7)
+                    game_over_sound.play()
+                    
                 game_manager.state = "GAME_OVER"
 
             for enemy in enemies:
