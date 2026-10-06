@@ -1474,6 +1474,9 @@ def main():
         pygame.mixer.Sound("assets/audio/misc/merchant/exit2.MP3"),
         pygame.mixer.Sound("assets/audio/misc/merchant/exit3.MP3")
     ]
+    
+    random_event_sound = pygame.mixer.Sound("assets/audio/misc/randomitem.mp3")
+    random_event_sound.set_volume(0.8)
 
     font = pygame.font.Font(
         None,
@@ -1854,6 +1857,7 @@ def main():
 
                         for index, button in enumerate(buttons):
                             if button.collidepoint(mouse_position):
+                                random_event_sound.play()
                                 apply_random_event(
                                     player,
                                     random_event_choices[index]
