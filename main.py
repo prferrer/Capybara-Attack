@@ -871,7 +871,7 @@ def use_weapon_skill(
 ):
     cooldowns = {
         "sword": 12000,
-        "katana": 3000,
+        "katana": 500,
         "staff": 7000,
         "shield": 4500
     }
