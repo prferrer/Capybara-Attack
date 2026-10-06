@@ -1562,6 +1562,98 @@ def main():
                 if event.type != pygame.QUIT:
                     settings_menu.handle_event(event)
 
+                    settings_action = (
+                        settings_menu.consume_action()
+                    )
+
+                    if settings_action == "character_select":
+
+                        selected_weapon = run_character_selection(
+                            screen,
+                            clock
+                        )
+
+                        if selected_weapon is None:
+                            running = False
+                            continue
+
+                        (
+                            game_manager,
+                            map_type,
+                            map_number,
+                            room,
+                            player,
+                            enemies,
+                            encounter,
+                            force_combat_next
+                        ) = new_game(
+                            selected_weapon
+                        )
+
+                        items = []
+                        last_player_attack = 0
+                        skill_menu_open = False
+                        skill_effect = None
+                        random_event_open = False
+                        random_event_choices = []
+                        merchant_menu_open = False
+                        backpack_menu_open = False
+                        backpack_buttons = []
+                        blocked_message_until = 0
+
+                        pygame.mixer.music.play(-1)
+
+                    elif settings_action == "start_screen":
+
+                        if not run_start_screen(
+                            screen,
+                            clock
+                        ):
+                            running = False
+                            continue
+
+                        if not run_backstory(
+                            screen,
+                            clock
+                        ):
+                            running = False
+                            continue
+
+                        selected_weapon = run_character_selection(
+                            screen,
+                            clock
+                        )
+
+                        if selected_weapon is None:
+                            running = False
+                            continue
+
+                        (
+                            game_manager,
+                            map_type,
+                            map_number,
+                            room,
+                            player,
+                            enemies,
+                            encounter,
+                            force_combat_next
+                        ) = new_game(
+                            selected_weapon
+                        )
+
+                        items = []
+                        last_player_attack = 0
+                        skill_menu_open = False
+                        skill_effect = None
+                        random_event_open = False
+                        random_event_choices = []
+                        merchant_menu_open = False
+                        backpack_menu_open = False
+                        backpack_buttons = []
+                        blocked_message_until = 0
+
+                        pygame.mixer.music.play(-1)
+
                 continue
 
             if event.type == pygame.KEYDOWN:

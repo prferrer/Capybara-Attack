@@ -182,6 +182,7 @@ class SettingsMenu:
         self.pausing = False
         self.view = "main"
         self.dragging = None
+        self.action = None
         self._fonts = None
 
         panel_w, panel_h = 560, 440
@@ -220,6 +221,27 @@ class SettingsMenu:
             self.panel.centerx + 125,
             self.panel.bottom - 30
         )
+        
+        self.pause_resume_button = pygame.Rect(
+            0,
+            0,
+            160,
+            50
+        )
+
+        self.pause_character_button = pygame.Rect(
+            0,
+            0,
+            160,
+            50
+        )
+
+        self.pause_start_button = pygame.Rect(
+            0,
+            0,
+            160,
+            50
+        )
 
         self.tutorial_back_button = pygame.Rect(0, 0, 160, 46)
         self.tutorial_prev_button = pygame.Rect(0, 0, 160, 46)
@@ -231,6 +253,7 @@ class SettingsMenu:
         self.is_open = True
         self.view = "main"
         self.dragging = None
+        self.action = None
         self.pausing = pause_game
 
         if pause_game and _pause_started[0] is None:
@@ -245,6 +268,11 @@ class SettingsMenu:
         if _pause_started[0] is not None:
             _paused_total[0] += _real_get_ticks() - _pause_started[0]
             _pause_started[0] = None
+            
+    def consume_action(self):
+        action = self.action
+        self.action = None
+        return action
 
     def _set_from_x(self, key, x):
         track = self.tracks[key]
@@ -320,6 +348,17 @@ class SettingsMenu:
                 self.tutorial_page = 0
 
             elif self.close_button.collidepoint(event.pos):
+                self.close()
+
+            elif self.pausing and self.pause_resume_button.collidepoint(event.pos):
+                self.close()
+
+            elif self.pausing and self.pause_character_button.collidepoint(event.pos):
+                self.action = "character_select"
+                self.close()
+
+            elif self.pausing and self.pause_start_button.collidepoint(event.pos):
+                self.action = "start_screen"
                 self.close()
 
         elif (
@@ -500,8 +539,57 @@ class SettingsMenu:
             )
         )
 
-        self._draw_button(screen, self.tutorial_button, "How to Play", mouse)
-        self._draw_button(screen, self.close_button, "Close", mouse)
+        if self.pausing:
+            self.pause_resume_button.midbottom = (
+                self.panel.centerx - 170,
+                self.panel.bottom - 25
+            )
+
+            self.pause_character_button.midbottom = (
+                self.panel.centerx,
+                self.panel.bottom - 25
+            )
+
+            self.pause_start_button.midbottom = (
+                self.panel.centerx + 170,
+                self.panel.bottom - 25
+            )
+
+            self._draw_button(
+                screen,
+                self.pause_resume_button,
+                "Resume",
+                mouse
+            )
+
+            self._draw_button(
+                screen,
+                self.pause_character_button,
+                "Character",
+                mouse
+            )
+
+            self._draw_button(
+                screen,
+                self.pause_start_button,
+                "Start Screen",
+                mouse
+            )
+
+        else:
+            self._draw_button(
+                screen,
+                self.tutorial_button,
+                "How to Play",
+                mouse
+            )
+
+            self._draw_button(
+                screen,
+                self.close_button,
+                "Close",
+                mouse
+            )
 
     def _draw_tutorial(self, screen):
         fonts = self._get_fonts()
