@@ -53,6 +53,16 @@ class Enemy:
             self.dead_sound = pygame.mixer.Sound("assets/audio/enemies/yeti/yetidead.mp3") #oa na sigaw
 
             self.dead_sound.set_volume(0.9)
+            
+        elif self.enemy_type == "slime":
+            self.dead_sound = pygame.mixer.Sound("assets/audio/enemies/slime/slimedead.mp3") #slime na patak
+
+            self.dead_sound.set_volume(0.8)
+        
+        elif self.enemy_type == "werewolf":
+            self.dead_sound = pygame.mixer.Sound("assets/audio/enemies/werewolf/werewolfdead.mp3") #sigaw na werewolf
+
+            self.dead_sound.set_volume(0.9)
 
         if enemy_type == "golem":
             prefix = "golem"
