@@ -2,7 +2,7 @@
 class GameManager:
     def __init__(self):
         self.day = 1
-        self.max_day = 50
+        self.max_day = 25
         self.state = "EXPLORING"
 
     def next_day(self):

@@ -146,7 +146,7 @@ def create_encounter(exclude_type=None, force_combat=False):
         y
     )
 
-START_DAY = 5
+START_DAY = 1
 
 NON_COMBAT_ENCOUNTERS = [
     "healing_fountain",
@@ -332,6 +332,43 @@ def draw_hud(screen, font, player):
     screen.blit(
         text,
         (10, 10)
+    )
+    
+def draw_day_counter(screen, game_manager, day_font):
+    day_text = day_font.render(
+        f"Day {game_manager.day}/{game_manager.max_day}",
+        True,
+        (255, 215, 70)
+    )
+
+    shadow = day_font.render(
+        f"Day {game_manager.day}/{game_manager.max_day}",
+        True,
+        (80, 60, 20)
+    )
+
+    shadow_rect = shadow.get_rect(
+        center=(
+            SCREEN_WIDTH // 2 + 2,
+            14 + 2
+        )
+    )
+
+    text_rect = day_text.get_rect(
+        center=(
+            SCREEN_WIDTH // 2,
+            14
+        )
+    )
+
+    screen.blit(
+        shadow,
+        shadow_rect
+    )
+
+    screen.blit(
+        day_text,
+        text_rect
     )
 
 SETTINGS_ICON_RECT = pygame.Rect(10, 45, 50, 50)
@@ -1497,6 +1534,11 @@ def main():
         None,
         28
     )
+    
+    day_font = pygame.font.Font(
+    None,
+    44
+    )
 
     big_font = pygame.font.Font(
         None,
@@ -2356,6 +2398,12 @@ def main():
             screen,
             font,
             player
+        )
+
+        draw_day_counter(
+            screen,
+            game_manager,
+            day_font
         )
 
         if skill_menu_open:

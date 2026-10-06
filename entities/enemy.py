@@ -277,7 +277,7 @@ class Enemy:
             return
 
         if self.is_attacking:
-            if self.enemy_type in ["orc", "slime", "werewolf"]:
+            if self.enemy_type in ["slime", "werewolf"]:
                 image = self.attack_images[self.current_frame]
 
                 if not self.facing_right:
@@ -286,6 +286,9 @@ class Enemy:
                         True,
                         False
                     )
+
+            elif self.enemy_type == "orc":
+                image = self.attack_images[self.current_frame]
 
             elif self.facing_right:
                 image = self.right_attack_images[self.current_frame]
