@@ -39,6 +39,9 @@ from systems.item import (
 )
 
 def get_map_info(day):
+    if day % 3 == 0 and day < 25:
+        return "normal", 5
+
     cycle_day = ((day - 1) % 15) + 1
 
     if cycle_day <= 5:
@@ -48,6 +51,9 @@ def get_map_info(day):
         return "cave", cycle_day - 5
 
     return "snow", cycle_day - 10
+
+def is_skill_selection_day(day):
+    return day % 3 == 0 and day < 25
 
 def create_enemies(map_type, day):
     if map_type == "cave":
@@ -1753,8 +1759,7 @@ def main():
                 ):
                     
                     if (
-                        map_type == "normal"
-                        and map_number == 5
+                        is_skill_selection_day(game_manager.day)
                         and len(player.skills) < player.skill_slots
                     ):
 
@@ -1841,8 +1846,7 @@ def main():
                             )
 
                 if (
-                    map_type == "normal"
-                    and map_number == 5
+                    is_skill_selection_day(game_manager.day)
                     and len(player.skills) < player.skill_slots
                 ):
 
@@ -2458,8 +2462,7 @@ def main():
             )
 
         if (
-            map_type == "normal"
-            and map_number == 5
+            is_skill_selection_day(game_manager.day)
             and not skill_menu_open
             and len(player.skills) < player.skill_slots
         ):
