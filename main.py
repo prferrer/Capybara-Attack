@@ -51,11 +51,17 @@ def get_map_info(day):
 
 def create_enemies(map_type, day):
     if map_type == "cave":
-        enemy_type = "golem"
+        base_enemy_type = "golem"
     elif map_type == "snow":
-        enemy_type = "yeti"
+        base_enemy_type = "yeti"
     else:
-        enemy_type = "orc"
+        base_enemy_type = "orc"
+
+    enemy_pool = [
+        base_enemy_type,
+        "slime",
+        "werewolf"
+    ]
 
     if day <= 5:
         enemy_count = 2
@@ -83,10 +89,19 @@ def create_enemies(map_type, day):
         (ROOM_X + 500, ROOM_Y + 100)
     ]
 
-    return [
-        Enemy(x, y, enemy_type, day)
-        for x, y in positions[:enemy_count]
-    ]
+    enemies = []
+
+    for x, y in positions[:enemy_count]:
+        enemy_type = random.choices(
+            enemy_pool,
+            weights=[60, 25, 15]
+        )[0]
+
+        enemies.append(
+            Enemy(x, y, enemy_type, day)
+        )
+
+    return enemies
 
 def create_encounter(exclude_type=None, force_combat=False):
     combat_encounters = [
@@ -666,8 +681,8 @@ def draw_skill_buttons(
     start_x = (
         SCREEN_WIDTH
         - (
-            button_width * 3
-            + gap * 2
+            button_width * player.skill_slots
+            + gap * (player.skill_slots - 1)
         )
         - 25
     )
@@ -1155,7 +1170,7 @@ def draw_skill_menu(
 
     buttons = []
 
-    if len(player.skills) < 3:
+    if len(player.skills) < player.skill_slots:
 
         for index, (name, damage) in enumerate(
             skill_choices
@@ -1555,7 +1570,9 @@ def main():
                     event.key in (
                         pygame.K_1,
                         pygame.K_2,
-                        pygame.K_3
+                        pygame.K_3,
+                        pygame.K_4,
+                        pygame.K_5
                     )
                     and not skill_menu_open
                     and not merchant_menu_open

@@ -18,6 +18,16 @@ class Enemy:
             self.attack = 8 + int((day - 1) * 0.7)
             self.speed = 2.2
 
+        elif enemy_type == "slime":
+            self.hp = 30 + (day - 1) * 5
+            self.attack = 4 + int((day - 1) * 0.5)
+            self.speed = 1.2
+
+        elif enemy_type == "werewolf":
+            self.hp = 50 + (day - 1) * 7
+            self.attack = 9 + int((day - 1) * 0.8)
+            self.speed = 2.5
+
         else:
             self.hp = 40 + (day - 1) * 6
             self.attack = 5 + int((day - 1) * 0.6)
@@ -48,6 +58,10 @@ class Enemy:
             prefix = "golem"
         elif enemy_type == "yeti":
             prefix = "yeti"
+        elif enemy_type == "slime":
+            prefix = "slime"
+        elif enemy_type == "werewolf":
+            prefix = "werewolf"
         else:
             prefix = "orc"
 
@@ -69,6 +83,13 @@ class Enemy:
 
                 self.attack_images.append(attack_image)
 
+            elif enemy_type in ["slime", "werewolf"]:
+                attack_image = pygame.image.load(
+                    f"assets/images/enemy/{prefix}_attacking{i}.png"
+                ).convert_alpha()
+
+                self.attack_images.append(attack_image)
+
             else:
                 right_attack = pygame.image.load(
                     f"assets/images/enemy/{prefix}_right_attack{i}.png"
@@ -81,17 +102,29 @@ class Enemy:
                 self.right_attack_images.append(right_attack)
                 self.left_attack_images.append(left_attack)
 
-            right_run = pygame.image.load(
-                f"assets/images/enemy/{prefix}_right_running{i}.png"
-                if enemy_type != "orc"
-                else f"assets/images/enemy/orc_right_run{i}.png"
-            ).convert_alpha()
+            if enemy_type in ["slime", "werewolf"]:
+                right_run = pygame.image.load(
+                    f"assets/images/enemy/{prefix}_running{i}.png"
+                ).convert_alpha()
 
-            left_run = pygame.image.load(
-                f"assets/images/enemy/{prefix}_left_running{i}.png"
-                if enemy_type != "orc"
-                else f"assets/images/enemy/orc_left_run{i}.png"
-            ).convert_alpha()
+                left_run = pygame.transform.flip(
+                    right_run,
+                    True,
+                    False
+                )
+
+            else:
+                right_run = pygame.image.load(
+                    f"assets/images/enemy/{prefix}_right_running{i}.png"
+                    if enemy_type != "orc"
+                    else f"assets/images/enemy/orc_right_run{i}.png"
+                ).convert_alpha()
+
+                left_run = pygame.image.load(
+                    f"assets/images/enemy/{prefix}_left_running{i}.png"
+                    if enemy_type != "orc"
+                    else f"assets/images/enemy/orc_left_run{i}.png"
+                ).convert_alpha()
 
             self.right_run_images.append(right_run)
             self.left_run_images.append(left_run)
@@ -244,10 +277,19 @@ class Enemy:
             return
 
         if self.is_attacking:
-            if self.enemy_type == "orc":
+            if self.enemy_type in ["orc", "slime", "werewolf"]:
                 image = self.attack_images[self.current_frame]
+
+                if not self.facing_right:
+                    image = pygame.transform.flip(
+                        image,
+                        True,
+                        False
+                    )
+
             elif self.facing_right:
                 image = self.right_attack_images[self.current_frame]
+
             else:
                 image = self.left_attack_images[self.current_frame]
 
